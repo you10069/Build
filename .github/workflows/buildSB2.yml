@@ -18,10 +18,10 @@ env:
   ENV_LINUX_V4_CGO: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GOAMD64=v4
   ENV_WINDOWS_V4: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v4
   ENV_WINDOWS_V4_CGO: CGO_ENABLED=1 GOOS=windows GOARCH=amd64 GOAMD64=v4
-  TAG_LINUX: with_gvisor,with_reality_server,with_quic,with_utls,with_ech,with_dhcp,with_wireguard,with_acme,with_clash_api
-  TAG_LINUX_ALL: with_gvisor,with_reality_server,with_quic,with_utls,with_ech,with_dhcp,with_wireguard,with_acme,with_clash_api,with_v2ray_api,with_grpc
-  TAG_WINDOWS: with_gvisor,with_reality_server,with_quic,with_utls,with_ech,with_dhcp,with_wireguard,with_acme,with_clash_api
-  TAG_WINDOWS_ALL: with_gvisor,with_reality_server,with_quic,with_utls,with_ech,with_dhcp,with_wireguard,with_acme,with_clash_api,with_v2ray_api,with_grpc
+  TAG_LINUX: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
+  TAG_LINUX_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
+  TAG_WINDOWS: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
+  TAG_WINDOWS_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
 
 on:
   workflow_dispatch:
