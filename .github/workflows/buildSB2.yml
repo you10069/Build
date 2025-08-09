@@ -1,4 +1,4 @@
-name: build SB
+name: build SB2
 
 env:
   VERSION: v1.12.0
