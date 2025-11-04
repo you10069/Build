@@ -27,7 +27,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ env.BUNDLE }}-${{ env.TAG_DATE }}
+          tag: caddyNC-${{ env.TAG_DATE }}
           file: caddy
           asset_name: caddy
           prerelease: true
