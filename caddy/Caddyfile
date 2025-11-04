@@ -1,0 +1,48 @@
+{
+	order trojan before forward_proxy
+	order forward_proxy before reverse_proxy
+
+	servers :443 {
+		listener_wrappers {
+			trojan
+		}
+	}
+
+	trojan {
+		caddy
+		# memory
+
+		no_proxy
+		# env_proxy
+		# socks_proxy server user passwd
+		# socks_proxy server
+		# http_proxy server user passwd
+		# http_proxy server
+		# named_proxy proxy_name proxy_type args...
+
+		users pass1234 word5678
+	}
+}
+
+:443, example.com {
+	tls example@example.com #你的邮箱
+	protocols tls1.2 tls1.2
+	ciphers TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+
+	trojan {
+		connect_method
+		websocket
+	}
+
+	forward_proxy {
+		basic_auth user pass
+		hide_ip
+		hide_via
+		probe_resistance
+		upstream socks5://127.0.0.1:1080
+	}
+
+	reverse_proxy  https://demo.cloudreve.org  { #伪装网址
+		header_up  Host  {upstream_hostport}
+	}
+}
