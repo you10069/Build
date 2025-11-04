@@ -9,9 +9,8 @@ defaults:
 
 jobs:
   build_caddy_with_naive:
-    runs-on: ubuntu-22.04
-    env:
-      BUNDLE: caddy-forwardproxy-naive
+    runs-on: ubuntu-latest
+
     steps:
       - uses: actions/setup-go@v5
         with:
