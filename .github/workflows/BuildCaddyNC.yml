@@ -1,4 +1,4 @@
-name: Build Caddy
+name: Build Caddy NC
 
 on:
   workflow_dispatch:
