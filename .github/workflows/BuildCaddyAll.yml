@@ -8,7 +8,7 @@ defaults:
     shell: bash
 
 jobs:
-  build_caddy_with_NT:
+  build_caddy_all:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,8 +17,23 @@ jobs:
           go-version: ^1.25
       - run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
       - run: |
-          CGO_ENABLED=0 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/imgk/caddy-trojan --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy
-          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/imgk/caddy-trojan --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy.exe
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --output caddy-nc-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --output caddy-nc-v3
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/zedifen/forwardproxy@naive --with github.com/caddy-dns/cloudflare --output caddy-zed-nc-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/zedifen/forwardproxy@naive --with github.com/caddy-dns/cloudflare --output caddy-zed-nc-v3
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --output caddy-wow-nc-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --output caddy-wow-nc-v3
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-nctl-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-nctl-v3
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/zedifen/forwardproxy@naive --with github.com/caddy-dns/cloudflare  --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-zed-nctl-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/zedifen/forwardproxy@naive --with github.com/caddy-dns/cloudflare  --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-zed-nctl-v3
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-wow-nctl-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-wow-nctl-v3
 
       - name: Set variables
         run: |
@@ -29,11 +44,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: caddyNT-${{ env.TAG_DATE }}
-          name: caddyNT-${{ env.TAG_DATE }}
+          tag_name: CaddyAll-${{ env.TAG_DATE }}
+          name: CaddyAll-${{ env.TAG_DATE }}
           files: |
-            caddy
-            caddy.exe
+            caddy-nc-v2
+            caddy-nc-v3
+            caddy-zed-nc-v2
+            caddy-zed-nc-v3
+            caddy-wow-nc-v2
+            caddy-wow-nc-v3
+            caddy-nctl-v2
+            caddy-nctl-v3
+            caddy-zed-nctl-v2
+            caddy-zed-nctl-v3
+            caddy-wow-nctl-v2
+            caddy-wow-nctl-v3
           preserve_order: true
           draft: false
           prerelease: true
