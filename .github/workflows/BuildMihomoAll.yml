@@ -1,7 +1,7 @@
 name: Build Mihomo All
 
 env:
-  VERSION: v1.18.10
+  VERSION: v1.19.15
   ENV_WINDOWS_V1: GOOS=windows GOARCH=amd64 GOAMD64=v1
   ENV_WINDOWS_V2: GOOS=windows GOARCH=amd64 GOAMD64=v2
   ENV_WINDOWS_V3: GOOS=windows GOARCH=amd64 GOAMD64=v3
