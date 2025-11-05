@@ -1,0 +1,89 @@
+name: Build Mihomo All
+
+env:
+  VERSION: v1.18.10
+  ENV_WINDOWS_V1: GOOS=windows GOARCH=amd64 GOAMD64=v1
+  ENV_WINDOWS_V2: GOOS=windows GOARCH=amd64 GOAMD64=v2
+  ENV_WINDOWS_V3: GOOS=windows GOARCH=amd64 GOAMD64=v3
+  ENV_WINDOWS_V4: GOOS=windows GOARCH=amd64 GOAMD64=v4
+
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ^1.23
+        cache: false
+
+    - name: git clone
+      run: |
+        git clone -b ${{ env.VERSION }} https://github.com/you10069/MihomoFork
+
+    - name: Build Windows V1
+      run: |
+        cd MihomoFork
+        go env -w ${{ env.ENV_WINDOWS_V1 }}
+        go mod download
+        go build -tags "with_gvisor" -v -o mihomo-v1.exe -trimpath -ldflags "-X 'github.com/metacubex/mihomo/constant.Version=${{ env.VERSION }}' -s -w -buildid="
+        cd ..
+
+    - name: Build Windows V2
+      run: |
+        cd MihomoFork
+        go env -w ${{ env.ENV_WINDOWS_V2 }}
+        go mod download
+        go build -tags "with_gvisor" -v -o mihomo-v2.exe -trimpath -ldflags "-X 'github.com/metacubex/mihomo/constant.Version=${{ env.VERSION }}' -s -w -buildid="
+        cd ..
+
+    - name: Build Windows V3
+      run: |
+        cd MihomoFork
+        go env -w ${{ env.ENV_WINDOWS_V3 }}
+        go mod download
+        go build -tags "with_gvisor" -v -o mihomo-v3.exe -trimpath -ldflags "-X 'github.com/metacubex/mihomo/constant.Version=${{ env.VERSION }}' -s -w -buildid="
+        cd ..
+
+    - name: Build Windows V4
+      run: |
+        cd MihomoFork
+        go env -w ${{ env.ENV_WINDOWS_V4 }}
+        go mod download
+        go build -tags "with_gvisor" -v -o mihomo-v4.exe -trimpath -ldflags "-X 'github.com/metacubex/mihomo/constant.Version=${{ env.VERSION }}' -s -w -buildid="
+        cd ..
+
+    - name: List built files
+      run: |
+        cd MihomoFork
+        ls -l mihomo-v1.exe mihomo-v2.exe mihomo-v3.exe mihomo-v4.exe
+        cd ..
+
+    - name: Set variables
+      run: |
+        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Package
+      run: |
+        mkdir mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        cp MihomoFork/mihomo-v1.exe mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp MihomoFork/mihomo-v2.exe mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp MihomoFork/mihomo-v3.exe mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp MihomoFork/mihomo-v4.exe mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        tar -zcvf mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+
+    - name: Upload
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        file: mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        asset_name: mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        prerelease: true
+        overwrite: false
