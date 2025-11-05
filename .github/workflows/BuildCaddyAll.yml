@@ -26,6 +26,15 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --output caddy-wow-nc-v2
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --output caddy-wow-nc-v3
 
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy-ncl-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy-ncl-v3
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/zedifen/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy-zed-ncl-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/zedifen/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy-zed-ncl-v3
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy-wow-ncl-v2
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/aUsernameWoW/forwardproxy@udpintcp --with github.com/caddy-dns/cloudflare --with github.com/mholt/caddy-l4 --output caddy-wow-ncl-v3
+
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-nctl-v2
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3 ~/go/bin/xcaddy build --with github.com/caddyserver/forwardproxy=github.com/klzgrad/forwardproxy@naive --with github.com/caddy-dns/cloudflare --with github.com/imgk/caddy-trojan --with github.com/mholt/caddy-l4 --output caddy-nctl-v3
 
@@ -53,6 +62,12 @@ jobs:
             caddy-zed-nc-v3
             caddy-wow-nc-v2
             caddy-wow-nc-v3
+            caddy-ncl-v2
+            caddy-ncl-v3
+            caddy-zed-ncl-v2
+            caddy-zed-ncl-v3
+            caddy-wow-ncl-v2
+            caddy-wow-ncl-v3
             caddy-nctl-v2
             caddy-nctl-v3
             caddy-zed-nctl-v2
