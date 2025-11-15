@@ -1,0 +1,189 @@
+name: build SB plus2
+
+env:
+  VERSION: v1.12.11
+  ENV_LINUX_V1: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v1
+  ENV_WINDOWS_V1: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v1
+  ENV_LINUX_V2: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2
+  ENV_WINDOWS_V2: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v2
+  ENV_LINUX_V3: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3
+  ENV_WINDOWS_V3: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v3
+  ENV_LINUX_V4: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v4
+  ENV_WINDOWS_V4: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v4
+  TAG_LINUX: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
+  TAG_LINUX_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
+  TAG_WINDOWS: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
+  TAG_WINDOWS_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ^1.25
+        cache: false
+
+    - name: git clone
+      run: |
+        git clone -b main https://github.com/qjebbs/sing-box
+
+    - name: Build Linux V1
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V1 }}
+        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v1 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Linux V1 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V1 }}
+        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v1-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Linux V2
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V2 }}
+        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v2 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Linux V2 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V2 }}
+        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v2-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Linux V3
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V3 }}
+        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v3 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Linux V3 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V3 }}
+        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v3-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Linux V4
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V4 }}
+        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v4 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Linux V4 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_LINUX_V4 }}
+        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v4-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V1
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V1 }}
+        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v1.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V1 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V1 }}
+        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v1-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V2
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V2 }}
+        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v2.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V2 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V2 }}
+        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v2-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V3
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V3 }}
+        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v3.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V3 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V3 }}
+        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v3-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V4
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V4 }}
+        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v4.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V4 All
+      run: |
+        cd sing-box
+        go env -w ${{ env.ENV_WINDOWS_V4 }}
+        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v4-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: List built files
+      run: |
+        cd sing-box
+        ls -l sing-box-v1 sing-box-v1-all sing-box-v2 sing-box-v2-all sing-box-v3 sing-box-v3-all sing-box-v4 sing-box-v4-all
+        ls -l sing-box-v1.exe sing-box-v1-all.exe sing-box-v2.exe sing-box-v2-all.exe sing-box-v3.exe sing-box-v3-all.exe sing-box-v4.exe sing-box-v4-all.exe
+        cd ..
+
+    - name: Set variables
+      run: |
+        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Package
+      run: |
+        mkdir sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        cp sing-box/sing-box-v1 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
+        tar -zcvf sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}
+
+    - name: Upload
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        file: sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        asset_name: sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        prerelease: true
+        overwrite: true
