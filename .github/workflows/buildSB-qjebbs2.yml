@@ -1,7 +1,7 @@
 name: build SB plus2
 
 env:
-  VERSION: v1.12.11
+  VERSION: v1.12.14
   ENV_LINUX_V1: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v1
   ENV_WINDOWS_V1: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v1
   ENV_LINUX_V2: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2
@@ -26,12 +26,14 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: ^1.25
+        go-version: ~1.25.8
+        # go-version: ^1.25
+        # check-latest: true # Always check for the latest patch release
         cache: false
 
     - name: git clone
       run: |
-        git clone -b main https://github.com/qjebbs/sing-box
+        git clone -b v1.12.14+rev https://github.com/qjebbs/sing-box
 
     - name: Build Linux V1
       run: |
