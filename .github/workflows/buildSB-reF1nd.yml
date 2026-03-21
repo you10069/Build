@@ -166,6 +166,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: sb-reF1nd-${{ env.VER }}-${{ env.TAG_DATE }}
         name: sb-reF1nd-${{ env.VER }}-${{ env.TAG_DATE }}
+        working_directory: sing-box
         files: |
           sing-box-v1
           sing-box-v1-all
