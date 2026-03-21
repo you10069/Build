@@ -2,6 +2,7 @@ name: build SB reF1nd
 
 env:
   VERSION: v1.12.25-reF1nd
+  VER: v1.12.25
   ENV_LINUX_V1: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v1
   ENV_WINDOWS_V1: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v1
   ENV_LINUX_V2: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2
@@ -159,27 +160,6 @@ jobs:
         echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
       shell: bash
 
-    - name: Package
-      run: |
-        mkdir sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        cp sing-box/sing-box-v1 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        tar -zcvf sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}
-
     - name: Upload
       uses: svenstaro/upload-release-action@v2
       with:
@@ -189,3 +169,31 @@ jobs:
         asset_name: sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
         prerelease: true
         overwrite: true
+
+    - name:  Upload
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: sb-reF1nd-${{ env.VER }}-${{ env.TAG_DATE }}
+        name: sb-reF1nd-${{ env.VER }}-${{ env.TAG_DATE }}
+        files: |
+          sing-box-v1
+          sing-box-v1-all
+          sing-box-v2
+          sing-box-v2-all
+          sing-box-v3
+          sing-box-v3-all
+          sing-box-v4
+          sing-box-v4-all
+          sing-box-v1.exe
+          sing-box-v1-all.exe
+          sing-box-v2.exe
+          sing-box-v2-all.exe
+          sing-box-v3.exe
+          sing-box-v3-all.exe
+          sing-box-v4.exe
+          sing-box-v4-all.exe
+        preserve_order: true
+        draft: false
+        prerelease: true
+        make_latest: false
