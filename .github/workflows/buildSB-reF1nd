@@ -31,7 +31,7 @@ jobs:
 
     - name: git clone
       run: |
-        git clone -b main https://github.com/reF1nd/sing-box
+        git clone -b ${{ env.VERSION }} https://github.com/reF1nd/sing-box
 
     - name: Build Linux V1
       run: |
