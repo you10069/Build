@@ -34,7 +34,7 @@ jobs:
 
     - name: git clone
       run: |
-        git clone -b main https://github.com/you10069/sing-box-qjebbs
+        git clone -b main https://github.com/you10069/sing-box-qjebbs sing-box
 
     - name: Build Linux V1
       run: |
