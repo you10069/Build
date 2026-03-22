@@ -1,4 +1,4 @@
-name: build SB plus2
+name: build SB qjebbs2
 
 env:
   VERSION: v1.12.14
