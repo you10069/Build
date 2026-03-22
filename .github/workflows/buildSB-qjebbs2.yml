@@ -162,31 +162,31 @@ jobs:
 
     - name: Package
       run: |
-        mkdir sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        cp sing-box/sing-box-v1 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4 sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all.exe sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        tar -zcvf sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        mkdir sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}
+        cp sing-box/sing-box-v1 sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1-all sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2 sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2-all sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3 sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3-all sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4 sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4-all sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1-all.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2-all.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3-all.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4-all.exe sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}/
+        tar -zcvf sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}.tar.gz sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}
 
     - name: Upload
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        file: sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
-        asset_name: sb-plus-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        tag: sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}
+        file: sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}.tar.gz
+        asset_name: sb-plus-${{ env.VER }}-${{ env.TAG_DATE }}.tar.gz
         prerelease: true
         overwrite: true
