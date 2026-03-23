@@ -1,4 +1,4 @@
-name: build SB qjebbs 1225
+name: build SB qjebbs 1125
 
 env:
   VERSION: v1.12.25-qjebbs
