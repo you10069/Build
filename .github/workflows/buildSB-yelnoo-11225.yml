@@ -1,4 +1,4 @@
-name: build SB yelnoo 1125
+name: build SB yelnoo 11225
 
 env:
   VERSION: v1.12.25-yelnoo
