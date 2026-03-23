@@ -34,7 +34,7 @@ jobs:
 
     - name: git clone
       run: |
-        git clone -b ${{ env.VERSION }} https://github.com/yelnoo/sing-box
+        git clone -b ${{ env.VERSION }} https://github.com/you10069/SingboxFork
 
     - name: Build Linux V1
       run: |
