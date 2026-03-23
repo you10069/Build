@@ -162,31 +162,31 @@ jobs:
 
     - name: Package
       run: |
-        mkdir sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        cp sing-box/sing-box-v1 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4 sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all.exe sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        tar -zcvf sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        mkdir sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}
+        cp sing-box/sing-box-v1 sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1-all sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2 sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2-all sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3 sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3-all sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4 sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4-all sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v1-all.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v2-all.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v3-all.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        cp sing-box/sing-box-v4-all.exe sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}/
+        tar -zcvf sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}.tar.gz sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}
 
     - name: Upload
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        file: sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
-        asset_name: sb-yelnoo-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        tag: sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}
+        file: sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}.tar.gz
+        asset_name: sb-yelnoo-${{ env.VER }}-${{ env.TAG_DATE }}.tar.gz
         prerelease: true
         overwrite: true
