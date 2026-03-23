@@ -37,6 +37,7 @@ jobs:
       with:
         repository: yelnoo/sing-box
         ref: 0581fa7e414320f0028e2a9a957b2adc1a8874fd
+        path: sing-box
 
     - name: Build Linux V1
       run: |
