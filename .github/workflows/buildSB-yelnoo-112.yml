@@ -32,7 +32,6 @@ jobs:
     - name: git clone
       run: |
         git clone -b main https://github.com/yelnoo/sing-box
-        git checkout 0581fa7e414320f0028e2a9a957b2adc1a8874fd
 
     - name: Build Linux V1
       run: |
