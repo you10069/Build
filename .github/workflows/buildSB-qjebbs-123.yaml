@@ -1,4 +1,4 @@
-name: build SB qjebbs3
+name: build SB qjebbs 122
 
 env:
   VERSION: v1.12.25-qjebbs
