@@ -95,3 +95,21 @@ jobs:
         prerelease: true
         make_latest: false
 
+    # - name: Delete all artifacts
+    #   uses: geekyeggo/delete-artifact@v4
+    #   with:
+    #     name: |
+    #       sing-box-v1-normal
+    #       sing-box-v1-lite
+    #       sing-box-v1-all
+    #       sing-box-v2-normal
+    #       sing-box-v2-lite
+    #       sing-box-v2-all
+    #       sing-box-v3-normal
+    #       sing-box-v3-lite
+    #       sing-box-v3-all
+    #       sing-box-v4-normal
+    #       sing-box-v4-lite
+    #       sing-box-v4-all
+
+    
