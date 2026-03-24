@@ -60,22 +60,38 @@ jobs:
 
         # Build sing-box
         go build -v -trimpath -tags "$TAGS" -o "$OUT" -ldflags "-X github.com/sagernet/sing-box/constant.Version=${VERSION_STR} -X internal/godebug.defaultGODEBUG=multipathtcp=0 -checklinkname=0" ./cmd/sing-box
-
         mkdir -p ../output
         cp "$OUT" ../output/
 
-    # Generate TAG_DATE
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: sing-box-${{ matrix.amd }}-${{ matrix.flavor }}
+        path: output/*
+        if-no-files-found: error
+
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release_files
+        merge-multiple: true
+
     - name: Set TAG_DATE
       run: echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
 
-    - name: Upload each file
+    - name: Upload Release
       uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        files: output/*
+        files: release_files/*
         draft: false
         prerelease: true
         make_latest: false
-
 
