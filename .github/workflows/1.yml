@@ -57,10 +57,6 @@ jobs:
           path: ~/.gradle
           key: gradle-${{ hashFiles('**/*.gradle') }}
 
-      - name: Update version
-        run: |-
-          go run -v ./cmd/internal/update_android_version --ci
-
       - name: Decode Keystore
         run: |-
           echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > ./clients/android/app/release.keystore
