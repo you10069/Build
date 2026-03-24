@@ -80,7 +80,6 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
         files: output/*
-        preserve_order: true
         draft: false
         prerelease: true
         make_latest: false
