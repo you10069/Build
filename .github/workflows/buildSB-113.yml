@@ -59,13 +59,7 @@ jobs:
         [ "${{ matrix.flavor }}" = "all" ] && VERSION_STR="${VERSION_STR}-all"
 
         # Build sing-box
-        go build -v -tags "$TAGS" \
-          -trimpath \
-          -ldflags "-X github.com/sagernet/sing-box/constant.Version=${VERSION_STR} \
-                    -X internal/godebug.defaultGODEBUG=multipathtcp=0 \
-                    -X internal/godebug.checklinkname=0 \
-                    -s -w -buildid=" \
-          -o "$OUT" ./cmd/sing-box
+        go build -v -trimpath -tags "$TAGS" -o "$OUT" -ldflags "-s -w -buildid= -X github.com/sagernet/sing-box/constant.Version=${VERSION_STR} -X internal/godebug.defaultGODEBUG=multipathtcp=0 -checklinkname=0' " ./cmd/sing-box
 
         mkdir -p ../output
         cp "$OUT" ../output/
