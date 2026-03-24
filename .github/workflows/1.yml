@@ -1,0 +1,102 @@
+name: build android apk
+
+env:
+  VERSION: v1.12.25-yelnoo
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout SagerNet/sing-box
+        uses: actions/checkout@v6
+        with:
+          repository: SagerNet/sing-box
+          ref: reF1nd-stable
+          fetch-depth: 0
+          submodules: 'recursive'
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ~1.25.8
+          # go-version: ^1.25
+          # check-latest: true # Always check for the latest patch release
+          # cache: false
+
+      - name: Setup Android NDK
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29
+
+      - name: Setup OpenJDK
+        run: |-
+          sudo apt update && sudo apt install -y openjdk-17-jdk-headless
+          /usr/lib/jvm/java-17-openjdk-amd64/bin/java --version
+
+      - name: Set tag
+        run: git tag ${{ env.VERSION }} -f
+
+      - name: Build library
+        run: |-
+          make lib_install
+          export PATH="$PATH:$(go env GOPATH)/bin"
+          make lib_android
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
+      - name: Gradle cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.gradle
+          key: gradle-${{ hashFiles('**/*.gradle') }}
+
+      - name: Update version
+        run: |-
+          go run -v ./cmd/internal/update_android_version --ci
+
+      - name: Decode Keystore
+        run: |-
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > ./clients/android/app/release.keystore
+          sed -i '/fun getProps(propName: String): String {/,/^}/c\
+          fun getProps(propName: String): String {\
+              System.getenv(propName)?.let { return it }\
+              val propsFile = rootProject.file("local.properties")\
+              if (propsFile.exists()) {\
+                  val props = Properties()\
+                  props.load(FileInputStream(propsFile))\
+                  props.getProperty(propName)?.let { return it }\
+              }\
+              return ""\
+          }' ./clients/android/app/build.gradle.kts
+
+      - name: Build sing-box apk
+        run: |-
+          mkdir -p ./clients/android/app/libs/
+          cp -f  ./*.aar ./clients/android/app/libs/
+          cd ./clients/android
+          ./gradlew :app:assembleOtherRelease
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
+          ALIAS_PASS: ${{ secrets.ALIAS_PASS }}
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+
+      - name: Prepare upload
+        run: |-
+          mkdir -p dist
+          cp clients/android/app/build/outputs/apk/other/release/*.apk dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: binary-android-apks
+          path: 'dist'   
