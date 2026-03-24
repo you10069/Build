@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: SagerNet/sing-box
-          ref: reF1nd-stable
+          ref: ${{ env.VERSION }}
           fetch-depth: 0
           submodules: 'recursive'
 
