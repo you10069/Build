@@ -1,7 +1,7 @@
 name: build android apk
 
 env:
-  VERSION: v1.12.25-yelnoo
+  VERSION: v1.12.25
 
 on:
   workflow_dispatch:
