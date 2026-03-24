@@ -72,6 +72,10 @@ jobs:
               return ""\
           }' ./clients/android/app/build.gradle.kts
 
+      - name: Change applicationId
+        run: |
+          sed -i 's/applicationId "io.nekohasekai.sfa"/applicationId "bgx.niubi"/' clients/android/app/build.gradle
+
       - name: Build sing-box apk
         run: |-
           mkdir -p ./clients/android/app/libs/
