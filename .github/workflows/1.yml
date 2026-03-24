@@ -32,7 +32,7 @@ jobs:
         id: setup-ndk
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r28
+          ndk-version: r29
 
       - name: Setup OpenJDK
         run: |-
@@ -70,7 +70,7 @@ jobs:
                   props.getProperty(propName)?.let { return it }\
               }\
               return ""\
-          }' ./clients/android/app/build.gradle
+          }' ./clients/android/app/build.gradle.kts
 
       - name: Change applicationId
         run: |
@@ -85,10 +85,8 @@ jobs:
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
-          ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
-          ALIAS_PASS: ${{ secrets.ALIAS_PASS }}
           LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+
 
       - name: Prepare upload
         run: |-
