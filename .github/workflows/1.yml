@@ -32,7 +32,7 @@ jobs:
         id: setup-ndk
         uses: nttld/setup-ndk@v1
         with:
-          ndk-version: r29
+          ndk-version: r28
 
       - name: Setup OpenJDK
         run: |-
@@ -57,21 +57,6 @@ jobs:
           path: ~/.gradle
           key: gradle-${{ hashFiles('**/*.gradle') }}
 
-      - name: Decode Keystore
-        run: |-
-          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > ./clients/android/app/release.keystore
-          sed -i '/fun getProps(propName: String): String {/,/^}/c\
-          fun getProps(propName: String): String {\
-              System.getenv(propName)?.let { return it }\
-              val propsFile = rootProject.file("local.properties")\
-              if (propsFile.exists()) {\
-                  val props = Properties()\
-                  props.load(FileInputStream(propsFile))\
-                  props.getProperty(propName)?.let { return it }\
-              }\
-              return ""\
-          }' ./clients/android/app/build.gradle.kts
-
       - name: Change applicationId
         run: |
           sed -i 's/applicationId "io.nekohasekai.sfa"/applicationId "bgx.niubi"/' clients/android/app/build.gradle
@@ -86,7 +71,6 @@ jobs:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
-
 
       - name: Prepare upload
         run: |-
