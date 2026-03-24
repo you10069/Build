@@ -54,7 +54,7 @@ jobs:
         OUT="${OUT}.exe"
 
         # Set build version string
-        VERSION_STR="version-${{ matrix.amd }}"
+        VERSION_STR="${VERSION}-${{ matrix.amd }}"
         [ "${{ matrix.flavor }}" = "lite" ] && VERSION_STR="${VERSION_STR}-lite"
         [ "${{ matrix.flavor }}" = "all" ] && VERSION_STR="${VERSION_STR}-all"
 
