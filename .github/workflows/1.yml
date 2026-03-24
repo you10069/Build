@@ -70,7 +70,7 @@ jobs:
                   props.getProperty(propName)?.let { return it }\
               }\
               return ""\
-          }' ./clients/android/app/build.gradle.kts
+          }' ./clients/android/app/build.gradle
 
       - name: Change applicationId
         run: |
