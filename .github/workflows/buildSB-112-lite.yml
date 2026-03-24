@@ -32,7 +32,7 @@ jobs:
         cd sing-box
         VERSION_LITE="${{ env.VERSION }}-lite-v3"
         go env -w ${{ env.ENV_WINDOWS_V3 }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v3-lite.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${VERSION_LITE}' -s -w -buildid=" ./cmd/sing-box
+        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-lite-v3.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${VERSION_LITE}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
     - name: Build Windows V3 All
@@ -40,7 +40,7 @@ jobs:
         cd sing-box
         VERSION_LITE_ALL="${{ env.VERSION }}-lite-grpc-v3"
         go env -w ${{ env.ENV_WINDOWS_V3 }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v3-grpc-lite.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${VERSION_LITE_ALL}' -s -w -buildid=" ./cmd/sing-box
+        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-lite-grpc-v3.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${VERSION_LITE_ALL}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
     - name: Set variables
@@ -56,8 +56,8 @@ jobs:
         name: sb-lite-${{ env.VERSION }}-${{ env.TAG_DATE }}
         working_directory: sing-box
         files: |
-          sing-box-v3-lite.exe
-          sing-box-v3-grpc-lite.exe
+          sing-box-lite-v3.exe
+          sing-box-lite-grpc-v3.exe
         draft: false
         prerelease: true
         make_latest: false
