@@ -1,0 +1,64 @@
+name: build SB 112 lite
+
+env:
+  VERSION: v1.12.25
+  ENV_WINDOWS_V3: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v3
+  TAG_WINDOWS: with_gvisor,with_quic,with_utls,with_clash_api
+  TAG_WINDOWS_ALL: with_gvisor,with_quic,with_utls,with_clash_api,with_grpc,with_v2ray_api
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: ~1.25.8
+        # go-version: ^1.25
+        # check-latest: true # Always check for the latest patch release
+        cache: false
+
+    - name: git clone
+      run: |
+        git clone -b ${{ env.VERSION }} https://github.com/SagerNet/sing-box
+
+
+    - name: Build Windows V3
+      run: |
+        cd sing-box
+        VERSION_LITE="${{ env.VERSION }}-lite-v3"
+        go env -w ${{ env.ENV_WINDOWS_V3 }}
+        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v3-lite.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${VERSION_LITE}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Build Windows V3 All
+      run: |
+        cd sing-box
+        VERSION_LITE_ALL="${{ env.VERSION }}-lite-grpc-v3"
+        go env -w ${{ env.ENV_WINDOWS_V3 }}
+        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v3-grpc-lite.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${VERSION_LITE_ALL}' -s -w -buildid=" ./cmd/sing-box
+        cd ..
+
+    - name: Set variables
+      run: |
+        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+      shell: bash
+
+    - name:  Upload
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: sb-lite-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        name: sb-lite-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        working_directory: sing-box
+        files: |
+          sing-box-v3-lite.exe
+          sing-box-v3-grpc-lite.exe
+        draft: false
+        prerelease: true
+        make_latest: false
+
