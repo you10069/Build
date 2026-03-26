@@ -26,7 +26,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: ~1.25.8
-        cache: true
+        cache: false
 
     - name: Checkout sing-box
       uses: actions/checkout@v5
