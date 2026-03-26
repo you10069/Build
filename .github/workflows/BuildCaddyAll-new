@@ -1,0 +1,93 @@
+name: Build Caddy All
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ======== 阶段一：并行矩阵编译 ========
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        goamd64: [v2, v3]
+        fp_source:
+          - { name: "nc", repo: "github.com/klzgrad/forwardproxy@naive" }
+          - { name: "zed-nc", repo: "github.com/zedifen/forwardproxy@naive" }
+          - { name: "wow-nc", repo: "github.com/aUsernameWoW/forwardproxy@udpintcp" }
+        l4: [false, true]
+        trojan: [false, true]
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ^1.25
+        cache: false
+
+    - name: Install xcaddy
+      run: go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
+
+    - name: Build Caddy
+      id: build
+      run: |
+        mkdir -p dist
+
+        PLUGINS=("--with" "github.com/caddyserver/forwardproxy=${{ matrix.fp_source.repo }}" "--with" "github.com/caddy-dns/cloudflare")
+
+        OUT="caddy-${{ matrix.fp_source.name }}"
+
+        if [[ "${{ matrix.l4 }}" == "true" ]]; then
+          PLUGINS+=("--with" "github.com/mholt/caddy-l4")
+          OUT="${OUT}l"
+        fi
+
+        if [[ "${{ matrix.trojan }}" == "true" ]]; then
+          PLUGINS+=("--with" "github.com/imgk/caddy-trojan")
+          OUT="${OUT}t"
+        fi
+
+        OUT="${OUT}-${{ matrix.goamd64 }}"
+
+        echo "OUT_FILE=$OUT" >> "$GITHUB_OUTPUT"
+
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=${{ matrix.goamd64 }} \
+          ~/go/bin/xcaddy build "${PLUGINS[@]}" --output "dist/$OUT"
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ steps.build.outputs.OUT_FILE }}
+        path: dist/*
+        if-no-files-found: error
+        retention-days: 1
+
+  # ======== 阶段二：统一合并与发布 ========
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download all Artifacts
+      uses: actions/download-artifact@v7
+      with:
+        path: release_files
+        merge-multiple: true
+
+    - name: Set TAG_DATE
+      run: echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+
+    - name: Upload Release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: CaddyAll-${{ env.TAG_DATE }}
+        name: CaddyAll-${{ env.TAG_DATE }}
+        files: release_files/*
+        draft: false
+        prerelease: true
+        make_latest: false
