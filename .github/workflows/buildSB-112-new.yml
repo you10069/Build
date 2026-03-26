@@ -101,7 +101,7 @@ jobs:
         path: release_files
         merge-multiple: true
 
-    - name: Set Release Tag
+    - name: Set TAG_DATE
       run: echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
 
     - name: Upload Release
