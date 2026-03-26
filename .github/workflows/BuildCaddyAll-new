@@ -1,4 +1,4 @@
-name: Build Caddy All
+name: Build Caddy All new
 
 on:
   workflow_dispatch:
