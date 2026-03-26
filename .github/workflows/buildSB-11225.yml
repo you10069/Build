@@ -1,4 +1,4 @@
-name: build SB 112
+name: build SB 11225
 
 env:
   VERSION: v1.12.25
