@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        amd: [v1, v2, v3, v4]
+        amd: [v1, v2, v3]
         flavor: [normal, lite, all]
 
     steps:
@@ -108,8 +108,5 @@ jobs:
     #       sing-box-v3-normal
     #       sing-box-v3-lite
     #       sing-box-v3-all
-    #       sing-box-v4-normal
-    #       sing-box-v4-lite
-    #       sing-box-v4-all
 
     
