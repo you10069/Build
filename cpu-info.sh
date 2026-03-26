@@ -11,23 +11,23 @@ reset="\033[0m"
 
 print_flag() {
     if supports "$1"; then
-        echo -e "  ${green}$1 ✔${reset}"
+        printf "%b\n" "  ${green}$1 ✔${reset}"
     else
-        echo -e "  ${red}$1 ✘${reset}"
+        printf "%b\n" "  ${red}$1 ✘${reset}"
     fi
 }
 
-echo -e "${yellow}v2:${reset}"
+printf "%b\n" "${yellow}v2:${reset}"
 for f in aes ssse3 sse4_1 sse4_2 popcnt cx16 lahf_lm; do
     print_flag "$f"
 done
 
-echo -e "${yellow}v3:${reset}"
+printf "%b\n" "${yellow}v3:${reset}"
 for f in avx avx2 bmi1 bmi2 fma movbe xsave lzcnt osxsave; do
     print_flag "$f"
 done
 
-echo -e "${yellow}v4:${reset}"
+printf "%b\n" "${yellow}v4:${reset}"
 for f in avx512f avx512bw avx512cd avx512dq avx512vl; do
     print_flag "$f"
 done
@@ -38,5 +38,5 @@ supports sse4_2 && level=2
 supports avx2 && level=3
 supports avx512f && level=4
 
-echo ""
-echo -e "${yellow}Your CPU supports: GOAMD64=v${level}${reset}"
+printf "\n"
+printf "%b\n" "${yellow}Your CPU supports: GOAMD64=v${level}${reset}"
