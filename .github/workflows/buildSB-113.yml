@@ -69,6 +69,7 @@ jobs:
         name: sing-box-${{ matrix.amd }}-${{ matrix.flavor }}
         path: output/*
         if-no-files-found: error
+        retention-days: 1
 
 
   release:
