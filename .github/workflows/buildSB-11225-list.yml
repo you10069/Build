@@ -57,10 +57,12 @@ jobs:
         fi
 
         # 动态 Version
-        VERSION_STR="${{ env.VERSION }}-${{ matrix.level }}"
+        VERSION_STR="${{ env.VERSION }}"
         if [ "${{ matrix.type }}" = "all" ]; then
           VERSION_STR="${VERSION_STR}-all"
         fi
+        VERSION_STR="${VERSION_STR}-${{ matrix.level }}"
+
 
         # 输出文件名
         OUT="sing-box-${{ matrix.level }}"
