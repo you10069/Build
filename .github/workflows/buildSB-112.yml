@@ -221,41 +221,15 @@ jobs:
         echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
       shell: bash
 
-    - name: Package
-      run: |
-        mkdir sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        cp sing-box/sing-box-v1 sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2 sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3 sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        tar -zcvf sb-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
 
-    - name: Upload
-      uses: svenstaro/upload-release-action@v2
+    - name:  Upload
+      uses: softprops/action-gh-release@v2
       with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        file: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
-        asset_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        files: sing-box/**
+        draft: false
         prerelease: true
-        overwrite: false
+        make_latest: false
+
