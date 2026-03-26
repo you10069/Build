@@ -129,7 +129,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
         name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        files: sing-box/**
+        files: sing-box/sing-box-*
         draft: false
         prerelease: true
         make_latest: false
