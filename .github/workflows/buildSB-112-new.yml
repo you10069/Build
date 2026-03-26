@@ -98,7 +98,7 @@ jobs:
     - name: Download all Artifacts
       uses: actions/download-artifact@v7
       with:
-        path: output
+        path: release_files
         merge-multiple: true
 
     - name: Set Release Tag
@@ -110,7 +110,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-new
         name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-new
-        files: output/*
+        files: release_files/*
         draft: false
         prerelease: true
         make_latest: false
