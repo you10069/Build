@@ -1,4 +1,4 @@
-name: build SB 11225 list
+name: build SB 112 new
 
 on:
   workflow_dispatch:
@@ -107,8 +107,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-list
-        name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-list
+        tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-new
+        name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-new
         files: output/*
         draft: false
         prerelease: true
