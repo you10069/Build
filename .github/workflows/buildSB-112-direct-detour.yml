@@ -31,7 +31,7 @@ jobs:
     - name: Checkout sing-box
       uses: actions/checkout@v5
       with:
-        repository: SagerNet/sing-box
+        repository: you10069/SingboxFork
         ref: ${{ env.VERSION }}
 
     - name: Build
