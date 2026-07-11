@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: v1.12.25
+  VERSION: v1.12.25-direct-detour
   TAG_LINUX: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
   TAG_LINUX_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
   TAG_WINDOWS: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
