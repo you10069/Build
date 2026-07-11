@@ -5,10 +5,10 @@ on:
 
 env:
   VERSION: v1.11.15-direct-detour
-  TAG_LINUX: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
-  TAG_LINUX_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
-  TAG_WINDOWS: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
-  TAG_WINDOWS_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
+  TAG_LINUX: with_reality_server,with_ech,with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_clash_api
+  TAG_LINUX_ALL: with_reality_server,with_ech,with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_clash_api,with_grpc,with_v2ray_api
+  TAG_WINDOWS: with_reality_server,with_ech,with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_clash_api
+  TAG_WINDOWS_ALL: with_reality_server,with_ech,with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_clash_api,with_grpc,with_v2ray_api
 
 jobs:
   # ======== 阶段一：并行矩阵编译 ========
