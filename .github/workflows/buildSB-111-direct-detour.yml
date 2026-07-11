@@ -1,0 +1,116 @@
+name: build SB 111 direct detour
+
+on:
+  workflow_dispatch:
+
+env:
+  VERSION: v1.11.15-direct-detour
+  TAG_LINUX: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
+  TAG_LINUX_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
+  TAG_WINDOWS: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api
+  TAG_WINDOWS_ALL: with_dhcp,with_gvisor,with_quic,with_utls,with_acme,with_wireguard,with_tailscale,with_clash_api,with_grpc,with_v2ray_api
+
+jobs:
+  # ======== 阶段一：并行矩阵编译 ========
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, windows]
+        level: [v1, v2, v3]
+        type: [normal, all]
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ~1.25.8
+        cache: false
+
+    - name: Checkout sing-box
+      uses: actions/checkout@v5
+      with:
+        repository: you10069/SingboxFork
+        ref: ${{ env.VERSION }}
+
+    - name: Build
+      run: |
+        export CGO_ENABLED=0
+        export GOOS=${{ matrix.os }}
+        export GOARCH=amd64
+        export GOAMD64=${{ matrix.level }}
+
+        # 选择 Tags
+        if [ "${{ matrix.os }}" = "linux" ]; then
+          if [ "${{ matrix.type }}" = "all" ]; then
+            TAGS="${{ env.TAG_LINUX_ALL }}"
+          else
+            TAGS="${{ env.TAG_LINUX }}"
+          fi
+        else
+          if [ "${{ matrix.type }}" = "all" ]; then
+            TAGS="${{ env.TAG_WINDOWS_ALL }}"
+          else
+            TAGS="${{ env.TAG_WINDOWS }}"
+          fi
+        fi
+
+        # 动态 Version
+        VERSION_STR="${{ env.VERSION }}"
+        if [ "${{ matrix.type }}" = "all" ]; then
+          VERSION_STR="${VERSION_STR}-all"
+        fi
+        VERSION_STR="${VERSION_STR}-${{ matrix.level }}"
+
+
+        # 输出文件名
+        OUT="sing-box-${{ matrix.level }}"
+        if [ "${{ matrix.type }}" = "all" ]; then OUT="${OUT}-all"; fi
+        if [ "${{ matrix.os }}" = "windows" ]; then OUT="${OUT}.exe"; fi
+
+        echo "================================================="
+        echo "Building: $OUT"
+        echo "Version: $VERSION_STR"
+        echo "Tags: $TAGS"
+        echo "================================================="
+
+        mkdir -p dist
+
+        go build -tags "$TAGS" -v -o "dist/$OUT" -trimpath \
+          -ldflags "-X github.com/sagernet/sing-box/constant.Version=$VERSION_STR -s -w -buildid=" \
+          ./cmd/sing-box
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: build-${{ matrix.os }}-${{ matrix.level }}-${{ matrix.type }}
+        path: dist/*
+        if-no-files-found: error
+        retention-days: 1
+
+  # ======== 阶段二：统一合并与发布 ========
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download all Artifacts
+      uses: actions/download-artifact@v7
+      with:
+        path: release_files
+        merge-multiple: true
+
+    - name: Set TAG_DATE
+      run: echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+
+    - name: Upload Release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-new
+        name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}-new
+        files: release_files/*
+        draft: false
+        prerelease: true
+        make_latest: false
