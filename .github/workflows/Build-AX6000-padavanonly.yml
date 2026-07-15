@@ -41,7 +41,7 @@ jobs:
     - name: Restore AX6000 custom U-Boot layout
       run: |
         chmod +x "$GITHUB_WORKSPACE/padavanonly/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
-        cd immortalwrt-mt798x-6.6
+        cd immortalwrt-mt798x-24.10
         "$GITHUB_WORKSPACE/padavanonly/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
 
     - name: Space show before
