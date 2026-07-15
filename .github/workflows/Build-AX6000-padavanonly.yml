@@ -38,6 +38,12 @@ jobs:
       run: |
         git clone -b openwrt-24.10-6.6 --single-branch  --depth=1 https://github.com/padavanonly/immortalwrt-mt798x-6.6  immortalwrt-mt798x-24.10
 
+    - name: Restore AX6000 custom U-Boot layout
+      run: |
+        chmod +x "$GITHUB_WORKSPACE/padavanonly/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
+        cd immortalwrt-mt798x-6.6
+        "$GITHUB_WORKSPACE/padavanonly/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
+
     - name: Space show before
       run: df -hT
 
