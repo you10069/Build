@@ -15,7 +15,7 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo -E apt-get update
-        sudo -E apt-get install -y gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler
+        sudo -E apt-get install -y gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
 
     - name: Clone source code
       run: |
