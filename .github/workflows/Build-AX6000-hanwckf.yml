@@ -1,4 +1,4 @@
-name: Build AX6000 hanwckf
+name: Build AX6000 hanwckf 21.02
 
 on:
   workflow_dispatch:
