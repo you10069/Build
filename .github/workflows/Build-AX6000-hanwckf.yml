@@ -93,4 +93,4 @@ jobs:
         file: Redmi-AX6000-hanwckf.tar.gz
         asset_name: Redmi-AX6000-hanwckf.tar.gz
         prerelease: true
-        overwrite: true
+        overwrite: false
