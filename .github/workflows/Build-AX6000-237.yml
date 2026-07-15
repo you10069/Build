@@ -1,4 +1,4 @@
-name: Build AX6000 237 23.05
+name: Build AX6000 237 24.10
 
 on:
   workflow_dispatch:
