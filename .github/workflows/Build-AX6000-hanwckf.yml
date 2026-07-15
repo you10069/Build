@@ -1,4 +1,4 @@
-name: Build hanwckf AX6000
+name: Build AX6000 hanwckf
 
 on:
   workflow_dispatch:
