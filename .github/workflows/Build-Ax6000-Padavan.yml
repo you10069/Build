@@ -1,4 +1,4 @@
-name: Build Padavan Ax6000
+name: Build Ax6000 Padavan
 
 on:
   workflow_dispatch:
