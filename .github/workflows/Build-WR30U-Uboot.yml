@@ -1,0 +1,52 @@
+name: Build WR30U Uboot
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get update
+        sudo -E apt-get install -y gcc-aarch64-linux-gnu build-essential flex bison libssl-dev device-tree-compiler qemu-user-static
+
+    - name: Clone source code
+      run: |
+        git clone --depth=1 https://github.com/hanwckf/bl-mt798x.git
+
+    - name: Space show before
+      run: df -hT
+
+    - name: Build Uboot WR30U
+      run: |
+        cd bl-mt798x
+        SOC=mt7981 BOARD=wr30u MULTI_LAYOUT=1 ./build.sh
+
+    - name: Set variables
+      run: |
+        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Package Firmware
+      run: |
+        tar -zcvf Xiaomi-WR30U-Uboot-${{ env.TAG_DATE }}.tar.gz bl-mt798x/output
+
+    - name: Space show after
+      run: df -hT
+
+    - name: Upload
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: Xiaomi-WR30U-Uboot-${{ env.TAG_DATE }}
+        file: Xiaomi-WR30U-Uboot-${{ env.TAG_DATE }}.tar.gz
+        asset_name: Xiaomi-WR30U-Uboot-${{ env.TAG_DATE }}.tar.gz
+        prerelease: true
+        overwrite: false
