@@ -77,7 +77,7 @@ jobs:
 
     - name: Package Firmware
       run: |
-        tar -zcvf Build-WR30U-hanwckf-${{ env.TAG_DATE }}.tar.gz immortalwrt-mt798x/bin/targets
+        tar -zcvf Xiaomi-WR30U-hanwckf-${{ env.TAG_DATE }}.tar.gz immortalwrt-mt798x/bin/targets
 
     - name: Space show after
       run: df -hT
