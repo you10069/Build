@@ -27,6 +27,22 @@ jobs:
     - name: Build Uboot AX6000
       run: |
         cd bl-mt798x
+
+        # 指定 U-Boot 和 ATF 源码目录
+        sed -i \
+          -e 's|^UBOOT_DIR=.*$|UBOOT_DIR=uboot-mtk-20220606|' \
+          -e 's|^ATF_DIR=.*$|ATF_DIR=atf-20220606-637ba581b|' \
+          build.sh
+
+        # 输出实际采用的目录，便于检查 Actions 日志
+        echo "Current build.sh configuration:"
+        grep -E '^(UBOOT_DIR|ATF_DIR)=' build.sh
+
+        # 确认目录存在
+        test -d uboot-mtk-20220606
+        test -d atf-20220606-637ba581b
+
+        # 编译 AX6000 多分区版本
         SOC=mt7986 BOARD=redmi_ax6000 MULTI_LAYOUT=1 ./build.sh
 
     - name: Set variables
