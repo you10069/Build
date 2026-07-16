@@ -1,5 +1,5 @@
 name: Build WR30U ImmortalWrt 24.10
-# AX6000 custom U-Boot layout
+# WR30U custom U-Boot layout
 
 on:
   workflow_dispatch:
@@ -42,12 +42,12 @@ jobs:
       run: |
         git clone -b ${{ env.VERSION }} --single-branch --depth=1 https://github.com/immortalwrt/immortalwrt.git immortalwrt-${{ env.VERSION }}
 
-    - name: Restore AX6000 custom U-Boot layout
+    - name: Restore WR30U custom U-Boot layout
       run: |
         chmod +x "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-layout.sh"
         cd immortalwrt-${{ env.VERSION }}
         "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-layout.sh"
-        sed -n '/^define Device\/xiaomi_redmi-router-ax6000$/,/^endef$/p' target/linux/mediatek/image/filogic.mk
+        sed -n '/^define Device\/xiaomi_mi-router-wr30u-112m-nmbm$/,/^endef$/p' target/linux/mediatek/image/filogic.mk
 
     - name: Space show before
       run: df -hT
@@ -71,7 +71,7 @@ jobs:
         cd immortalwrt-${{ env.VERSION }}
         echo "$(nproc) thread download"
         make defconfig
-        grep -E '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_redmi-router-ax6000.*=y' .config
+        grep -Fx 'CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_mi-router-wr30u-112m-nmbm=y' .config
         make download -j$(nproc)
         find dl -type f -size -1024c -exec ls -l {} \;
         find dl -type f -size -1024c -exec rm -f {} \;
