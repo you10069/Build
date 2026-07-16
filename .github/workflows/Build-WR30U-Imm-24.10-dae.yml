@@ -1,4 +1,4 @@
-name: Build WR30U ImmortalWrt 24.10
+name: Build WR30U ImmortalWrt 24.10 dae
 # WR30U custom U-Boot layout
 
 on:
