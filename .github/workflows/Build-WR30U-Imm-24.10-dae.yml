@@ -89,7 +89,7 @@ jobs:
 
     - name: Package Firmware
       run: |
-        tar -zcvf Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz immortalwrt-${{ env.VERSION }}/bin/targets
+        tar -zcvf Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-dae-${{ env.TAG_DATE }}.tar.gz immortalwrt-${{ env.VERSION }}/bin/targets
 
     - name: Space show after
       run: df -hT
@@ -98,8 +98,8 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        file: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
-        asset_name: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        tag: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-dae-${{ env.TAG_DATE }}
+        file: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-dae-${{ env.TAG_DATE }}.tar.gz
+        asset_name: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-dae-${{ env.TAG_DATE }}.tar.gz
         prerelease: true
         overwrite: false
