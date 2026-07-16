@@ -1,0 +1,105 @@
+name: Build WR30U ImmortalWrt 24.10
+# AX6000 custom U-Boot layout
+
+on:
+  workflow_dispatch:
+
+env:
+  VERSION: v24.10.6
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+
+    - name: Maximize build space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,if set to "true" but frees about 6 GB
+        tool-cache: true
+        # all of these default to true, but feel free to set to "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: false
+
+    - name: Checkout
+      uses: actions/checkout@v5
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get update
+        sudo -E apt-get install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
+
+
+    - name: Clone source code
+      run: |
+        git clone -b ${{ env.VERSION }} --single-branch --depth=1 https://github.com/immortalwrt/immortalwrt.git immortalwrt-${{ env.VERSION }}
+
+    - name: Restore AX6000 custom U-Boot layout
+      run: |
+        chmod +x "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-layout.sh"
+        cd immortalwrt-${{ env.VERSION }}
+        "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-layout.sh"
+        sed -n '/^define Device\/xiaomi_redmi-router-ax6000$/,/^endef$/p' target/linux/mediatek/image/filogic.mk
+
+    - name: Space show before
+      run: df -hT
+
+    - name: Use my feeds
+      run: |
+        cp -f "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/feeds.conf.default" immortalwrt-${{ env.VERSION }}/feeds.conf.default
+
+    - name: Update feeds
+      run: |
+        cd immortalwrt-${{ env.VERSION }}
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: Use my config
+      run: |
+        cp -f "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/.config" immortalwrt-${{ env.VERSION }}/.config
+
+    - name: Download package
+      run: |
+        cd immortalwrt-${{ env.VERSION }}
+        echo "$(nproc) thread download"
+        make defconfig
+        grep -E '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_redmi-router-ax6000.*=y' .config
+        make download -j$(nproc)
+        find dl -type f -size -1024c -exec ls -l {} \;
+        find dl -type f -size -1024c -exec rm -f {} \;
+
+    - name: Build Firmware
+      run: |
+        cd immortalwrt-${{ env.VERSION }}
+        echo "$(nproc) thread compile"
+        make -j$(nproc) V=s || make -j1 V=s
+
+    - name: Set variables
+      run: |
+        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Package Firmware
+      run: |
+        tar -zcvf Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz immortalwrt-${{ env.VERSION }}/bin/targets
+
+    - name: Space show after
+      run: df -hT
+
+    - name: Upload
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        tag: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        file: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        asset_name: Xiaomi-WR30U-ImmortalWrt-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
+        prerelease: true
+        overwrite: false
