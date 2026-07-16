@@ -68,7 +68,6 @@ jobs:
         cd immortalwrt-mt798x
         echo -e "$(nproc) thread compile"
         make -j$(nproc) V=s || make -j1 V=s
-        echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Set variables
       run: |
