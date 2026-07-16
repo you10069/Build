@@ -42,21 +42,11 @@ jobs:
       run: |
         git clone -b ${{ env.VERSION }} --single-branch --depth=1 https://github.com/immortalwrt/immortalwrt.git immortalwrt-${{ env.VERSION }}
 
-    # - name: Restore AX6000 custom U-Boot layout
-    #   run: |
-    #     chmod +x "$GITHUB_WORKSPACE/immortalwrt/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
-    #     cd immortalwrt-${{ env.VERSION }}
-    #     "$GITHUB_WORKSPACE/immortalwrt/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
-
     - name: Restore AX6000 custom U-Boot layout
       run: |
         chmod +x "$GITHUB_WORKSPACE/immortalwrt/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
         cd immortalwrt-${{ env.VERSION }}
         "$GITHUB_WORKSPACE/immortalwrt/Redmi-AX6000-24.10/custom-U-Boot-layout.sh"
-        sed -n '/^define Device\/xiaomi_redmi-router-ax6000$/,/^endef$/p' target/linux/mediatek/image/filogic.mk
-
-
-
 
     - name: Space show before
       run: df -hT
