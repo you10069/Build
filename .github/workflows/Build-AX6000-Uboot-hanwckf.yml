@@ -1,4 +1,4 @@
-name: Build AX6000 hanwckf Uboot
+name: Build AX6000 Uboot
 
 on:
   workflow_dispatch:
