@@ -71,6 +71,7 @@ jobs:
         cd immortalwrt-${{ env.VERSION }}
         echo "$(nproc) thread download"
         make defconfig
+        grep -E '^CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_xiaomi_redmi-router-ax6000.*=y' .config
         make download -j$(nproc)
         find dl -type f -size -1024c -exec ls -l {} \;
         find dl -type f -size -1024c -exec rm -f {} \;
