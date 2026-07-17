@@ -1,0 +1,332 @@
+name: Build Nikki x86_64 IPKs
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "OpenWrt-nikki 源码分支、Tag 或 Commit"
+        required: true
+        default: "main"
+        type: string
+
+      source_subdir:
+        description: "nikki 和 luci-app-nikki 所在目录"
+        required: true
+        default: "v5"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-nikki-x86_64
+  cancel-in-progress: true
+
+env:
+  SOURCE_REPOSITORY: you10069/OpenWrt-nikki-X
+
+  OPENWRT_VERSION: "21.02.7"
+  OPENWRT_TARGET: "x86/64"
+  OPENWRT_ARCH: "x86_64"
+
+  SDK_ARCHIVE: openwrt-sdk-21.02.7-x86-64_gcc-8.4.0_musl.Linux-x86_64.tar.xz
+  SDK_URL: https://downloads.openwrt.org/releases/21.02.7/targets/x86/64/openwrt-sdk-21.02.7-x86-64_gcc-8.4.0_musl.Linux-x86_64.tar.xz
+  SDK_SHA256: 21c75e4c5a429da487f8a885555cb49eee80cfc355d5dbe35d2b3ae05324a09d
+
+jobs:
+  build:
+    name: OpenWrt 21.02.7 x86_64
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout Nikki source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SOURCE_REPOSITORY }}
+          ref: ${{ inputs.source_ref }}
+          path: source
+          fetch-depth: 1
+
+      - name: Validate source layout
+        shell: bash
+        env:
+          SOURCE_SUBDIR: ${{ inputs.source_subdir }}
+        run: |
+          set -euo pipefail
+
+          SOURCE_DIR="${GITHUB_WORKSPACE}/source/${SOURCE_SUBDIR}"
+
+          echo "Source directory: ${SOURCE_DIR}"
+
+          test -f "${SOURCE_DIR}/nikki/Makefile" || {
+            echo "::error::未找到 ${SOURCE_SUBDIR}/nikki/Makefile"
+            exit 1
+          }
+
+          test -f "${SOURCE_DIR}/luci-app-nikki/Makefile" || {
+            echo "::error::未找到 ${SOURCE_SUBDIR}/luci-app-nikki/Makefile"
+            exit 1
+          }
+
+          echo "Nikki source:"
+          git -C "${GITHUB_WORKSPACE}/source" rev-parse HEAD
+
+          echo "Detected package directories:"
+          find "${SOURCE_DIR}" -maxdepth 2 -name Makefile -print
+
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            clang \
+            flex \
+            bison \
+            g++ \
+            gawk \
+            gcc-multilib \
+            g++-multilib \
+            gettext \
+            git \
+            libelf-dev \
+            libncurses-dev \
+            libssl-dev \
+            python3 \
+            python3-distutils \
+            python3-setuptools \
+            rsync \
+            unzip \
+            zlib1g-dev \
+            file \
+            wget \
+            curl \
+            xz-utils \
+            ca-certificates
+
+      - name: Download OpenWrt SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-delay 3 \
+            --connect-timeout 30 \
+            --output "${SDK_ARCHIVE}" \
+            "${SDK_URL}"
+
+          echo "${SDK_SHA256}  ${SDK_ARCHIVE}" | sha256sum --check -
+
+      - name: Extract OpenWrt SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${GITHUB_WORKSPACE}/sdk"
+
+          tar \
+            --extract \
+            --xz \
+            --file "${SDK_ARCHIVE}" \
+            --directory "${GITHUB_WORKSPACE}/sdk" \
+            --strip-components=1
+
+          test -x "${GITHUB_WORKSPACE}/sdk/scripts/feeds"
+          test -f "${GITHUB_WORKSPACE}/sdk/Makefile"
+
+      - name: Update and install feeds
+        working-directory: sdk
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Add Nikki packages to SDK
+        shell: bash
+        env:
+          SOURCE_SUBDIR: ${{ inputs.source_subdir }}
+        run: |
+          set -euo pipefail
+
+          SOURCE_DIR="${GITHUB_WORKSPACE}/source/${SOURCE_SUBDIR}"
+          PACKAGE_DIR="${GITHUB_WORKSPACE}/sdk/package/custom-nikki"
+
+          rm -rf "${PACKAGE_DIR}"
+          mkdir -p "${PACKAGE_DIR}"
+
+          cp -a "${SOURCE_DIR}/nikki" "${PACKAGE_DIR}/nikki"
+          cp -a "${SOURCE_DIR}/luci-app-nikki" \
+            "${PACKAGE_DIR}/luci-app-nikki"
+
+          # 防止 feeds 中存在同名包，避免重复定义。
+          find "${GITHUB_WORKSPACE}/sdk/package/feeds" \
+            -mindepth 2 \
+            -maxdepth 2 \
+            -type l \
+            \( -name nikki -o -name luci-app-nikki \) \
+            -delete 2>/dev/null || true
+
+          echo "Installed custom packages:"
+          find "${PACKAGE_DIR}" -maxdepth 2 -name Makefile -print
+
+      - name: Configure packages
+        working-directory: sdk
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat >> .config <<'EOF'
+          CONFIG_PACKAGE_nikki=m
+          CONFIG_PACKAGE_luci-app-nikki=m
+          EOF
+
+          make defconfig
+
+          echo "Selected packages:"
+          grep -E \
+            '^CONFIG_PACKAGE_(nikki|luci-app-nikki)=' \
+            .config
+
+      - name: Build Nikki
+        working-directory: sdk
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${GITHUB_WORKSPACE}/logs"
+
+          make package/nikki/clean
+
+          make \
+            package/nikki/compile \
+            -j"$(nproc)" \
+            V=s \
+            2>&1 | tee "${GITHUB_WORKSPACE}/logs/nikki-build.log"
+
+      - name: Build luci-app-nikki
+        working-directory: sdk
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          make package/luci-app-nikki/clean
+
+          make \
+            package/luci-app-nikki/compile \
+            -j"$(nproc)" \
+            V=s \
+            2>&1 | tee "${GITHUB_WORKSPACE}/logs/luci-app-nikki-build.log"
+
+      - name: Collect IPK packages
+        shell: bash
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+          SOURCE_SUBDIR: ${{ inputs.source_subdir }}
+        run: |
+          set -euo pipefail
+
+          SDK_DIR="${GITHUB_WORKSPACE}/sdk"
+          OUTPUT_DIR="${GITHUB_WORKSPACE}/artifacts"
+
+          rm -rf "${OUTPUT_DIR}"
+          mkdir -p "${OUTPUT_DIR}"
+
+          NIKKI_COUNT="$(
+            find "${SDK_DIR}/bin/packages" \
+              -type f \
+              -name 'nikki_*.ipk' |
+              wc -l
+          )"
+
+          LUCI_COUNT="$(
+            find "${SDK_DIR}/bin/packages" \
+              -type f \
+              -name 'luci-app-nikki_*.ipk' |
+              wc -l
+          )"
+
+          if [ "${NIKKI_COUNT}" -ne 1 ]; then
+            echo "::error::预期生成 1 个 nikki IPK，实际为 ${NIKKI_COUNT}"
+            find "${SDK_DIR}/bin" -type f -name '*nikki*.ipk' -print || true
+            exit 1
+          fi
+
+          if [ "${LUCI_COUNT}" -ne 1 ]; then
+            echo "::error::预期生成 1 个 luci-app-nikki IPK，实际为 ${LUCI_COUNT}"
+            find "${SDK_DIR}/bin" -type f -name '*nikki*.ipk' -print || true
+            exit 1
+          fi
+
+          find "${SDK_DIR}/bin/packages" \
+            -type f \
+            \( \
+              -name 'nikki_*.ipk' \
+              -o \
+              -name 'luci-app-nikki_*.ipk' \
+            \) \
+            -exec cp -v '{}' "${OUTPUT_DIR}/" ';'
+
+          SOURCE_COMMIT="$(
+            git -C "${GITHUB_WORKSPACE}/source" rev-parse HEAD
+          )"
+
+          {
+            echo "OpenWrt version: ${OPENWRT_VERSION}"
+            echo "OpenWrt target: ${OPENWRT_TARGET}"
+            echo "OpenWrt package architecture: ${OPENWRT_ARCH}"
+            echo "Source repository: ${SOURCE_REPOSITORY}"
+            echo "Source ref: ${SOURCE_REF}"
+            echo "Source commit: ${SOURCE_COMMIT}"
+            echo "Source directory: ${SOURCE_SUBDIR}"
+            echo "GitHub run: ${GITHUB_RUN_ID}"
+            echo "GitHub run number: ${GITHUB_RUN_NUMBER}"
+          } > "${OUTPUT_DIR}/BUILD_INFO.txt"
+
+          (
+            cd "${OUTPUT_DIR}"
+            sha256sum ./*.ipk > SHA256SUMS
+          )
+
+          echo "Final artifacts:"
+          ls -lh "${OUTPUT_DIR}"
+
+      - name: Validate IPK files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for package in "${GITHUB_WORKSPACE}"/artifacts/*.ipk; do
+            echo "Checking: ${package}"
+
+            file "${package}"
+
+            ar t "${package}" | grep -Fx 'debian-binary'
+            ar t "${package}" | grep -E '^control\.tar\.(gz|xz|zst)$'
+            ar t "${package}" | grep -E '^data\.tar\.(gz|xz|zst)$'
+          done
+
+      - name: Upload Nikki IPKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nikki-Legacy-OpenWrt-21.02.7-x86_64-${{ github.run_number }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nikki-build-logs-${{ github.run_number }}
+          path: logs/
+          if-no-files-found: ignore
+          retention-days: 7
