@@ -6,13 +6,13 @@ on:
       source_ref:
         description: "OpenWrt-nikki 源码分支、Tag 或 Commit"
         required: true
-        default: "main"
+        default: "v5"
         type: string
 
       source_subdir:
         description: "nikki 和 luci-app-nikki 所在目录"
         required: true
-        default: "v5"
+        default: "."
         type: string
 
 permissions:
