@@ -40,9 +40,9 @@ jobs:
 
         exclude:
           - arch: x86_64
-            branch: openwrt-23.05
+            branch: openwrt-23.05.6
           - arch: x86_64
-            branch: openwrt-24.10  
+            branch: openwrt-24.10
 
     steps:
       # 检出当前的编译仓库
