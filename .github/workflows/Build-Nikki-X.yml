@@ -35,12 +35,12 @@ jobs:
 
         branch:
           - openwrt-21.02
-          - openwrt-23.05
-          - openwrt-24.10
+          # - openwrt-23.05
+          # - openwrt-24.10
 
         exclude:
           - arch: mips_4kec
-            branch: openwrt-25.12
+            branch: openwrt-25.12       
 
     steps:
       # 检出当前的编译仓库
