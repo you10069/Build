@@ -34,9 +34,9 @@ jobs:
           - aarch64_cortex-a53
 
         branch:
-          - openwrt-21.02
+          # - openwrt-21.02
           - openwrt-23.05.6
-          - openwrt-24.10
+          # - openwrt-24.10
 
         exclude:
           - arch: x86_64
