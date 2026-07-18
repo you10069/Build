@@ -31,7 +31,7 @@ jobs:
       matrix:
         arch:
           - x86_64
-          - aarch64_cortex-a53
+          # - aarch64_cortex-a53
 
         branch:
           - openwrt-21.02
