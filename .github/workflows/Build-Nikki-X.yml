@@ -43,7 +43,7 @@ jobs:
           - arch: x86_64
             branch: openwrt-23.05
           - arch: x86_64
-            branch: - 23.05.6
+            branch: 23.05.6
           - arch: x86_64
             branch: openwrt-24.10
 
