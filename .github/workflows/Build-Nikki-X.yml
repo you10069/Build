@@ -15,9 +15,6 @@ on:
         default: v6
         type: string
 
-permissions:
-  contents: read
-
 concurrency:
   group: build-nikki-${{ github.ref }}
   cancel-in-progress: false
@@ -34,9 +31,16 @@ jobs:
       matrix:
         arch:
           - x86_64
+          - aarch64_cortex-a53
 
         branch:
           - openwrt-21.02
+          - openwrt-23.05
+          - openwrt-24.10
+
+        exclude:
+          - arch: mips_4kec
+            branch: openwrt-25.12
 
     steps:
       # 检出当前的编译仓库
@@ -58,6 +62,9 @@ jobs:
           echo "Source ref: ${{ inputs.source_ref }}"
           echo "Source commit:"
           git -C package-feed rev-parse HEAD
+
+      - name: Space show before
+        run: df -hT
 
       - name: Build packages
         uses: openwrt/gh-action-sdk@main
@@ -89,6 +96,9 @@ jobs:
             -type f \
             -printf '%f\n' \
             2>/dev/null || true
+
+      - name: Space show after
+        run: df -hT
 
       - name: Upload packages
         if: success()
