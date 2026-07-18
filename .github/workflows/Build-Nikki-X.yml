@@ -1,13 +1,22 @@
-name: 2
+name: Build Nikki-X
 
 on:
   workflow_dispatch:
     inputs:
+      source_repository:
+        description: 源码仓库，格式 owner/repository
+        required: true
+        default: you10069/OpenWrt-nikki-X
+        type: string
+
       source_ref:
-        description: Nikki 源码分支、标签或 Commit
+        description: 源码分支、标签或 Commit
         required: true
         default: v5
         type: string
+
+permissions:
+  contents: read
 
 concurrency:
   group: build-nikki-${{ github.ref }}
@@ -31,21 +40,21 @@ jobs:
 
     steps:
       # 检出当前的编译仓库
-      - name: Checkout builder repository
+      - name: Checkout
         uses: actions/checkout@v7
 
       # 检出真正的软件包源码仓库
-      - name: Checkout Nikki source
+      - name: Checkout source
         uses: actions/checkout@v7
         with:
-          repository: you10069/OpenWrt-nikki-X
+          repository: ${{ inputs.source_repository }}
           ref: ${{ inputs.source_ref }}
           path: package-feed
           fetch-depth: 1
 
       - name: Show source information
         run: |
-          echo "Source repository: nikkinikki-org/OpenWrt-nikki"
+          echo "Source repository: ${{ inputs.source_repository }}"
           echo "Source ref: ${{ inputs.source_ref }}"
           echo "Source commit:"
           git -C package-feed rev-parse HEAD
