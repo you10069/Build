@@ -12,7 +12,7 @@ on:
       source_ref:
         description: 源码分支、标签或 Commit
         required: true
-        default: v5
+        default: v6
         type: string
 
 permissions:
