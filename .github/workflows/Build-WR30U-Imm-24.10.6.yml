@@ -44,9 +44,9 @@ jobs:
 
     - name: Restore WR30U custom U-Boot layout
       run: |
-        chmod +x "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-layout.sh"
+        chmod +x "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-24.10.6.sh"
         cd immortalwrt-${{ env.VERSION }}
-        "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-layout.sh"
+        "$GITHUB_WORKSPACE/immortalwrt/Xiaomi-WR30U-24.10/custom-U-Boot-24.10.6.sh"
         sed -n '/^define Device\/xiaomi_mi-router-wr30u-112m-nmbm$/,/^endef$/p' target/linux/mediatek/image/filogic.mk
 
     - name: Space show before
