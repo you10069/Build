@@ -34,6 +34,7 @@ jobs:
 
         branch:
           - 23.05.6
+          - openwrt-23.05
           - openwrt-24.10
 
         exclude:
