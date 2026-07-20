@@ -35,7 +35,6 @@ jobs:
         branch:
           - 23.05.6
           - openwrt-23.05
-          - openwrt-24.10
 
     steps:
       # 检出当前的编译仓库
