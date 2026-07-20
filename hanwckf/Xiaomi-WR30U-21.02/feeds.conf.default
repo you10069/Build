@@ -3,4 +3,4 @@ src-git-full luci https://github.com/immortalwrt/luci.git;openwrt-21.02
 src-git-full routing https://github.com/openwrt/routing.git;openwrt-21.02
 src-git-full telephony https://github.com/openwrt/telephony.git;openwrt-21.02
 
-src-git nikki-x https://github.com/you10069/OpenWrt-nikki-X.git;v6
+src-git nikki-x https://github.com/you10069/OpenWrt-nikki-X.git;v7
