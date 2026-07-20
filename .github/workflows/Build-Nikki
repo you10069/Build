@@ -1,0 +1,122 @@
+name: Build Nikki
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_repository:
+        description: 源码仓库，格式 owner/repository
+        required: true
+        default: nikkinikki-org/OpenWrt-nikki
+        type: string
+
+      source_ref:
+        description: 源码分支、标签或 Commit
+        required: true
+        default: main
+        type: string
+
+concurrency:
+  group: build-nikki-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: ${{ matrix.arch }}-${{ matrix.branch }}
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        arch:
+          - x86_64
+          - aarch64_cortex-a53
+
+        branch:
+          - openwrt-21.02
+          - 23.05.6
+          - openwrt-24.10
+
+        exclude:
+          - arch: x86_64
+            branch: 23.05.6
+          - arch: x86_64
+            branch: openwrt-24.10
+
+    steps:
+      # 检出当前的编译仓库
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # 检出真正的软件包源码仓库
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ inputs.source_repository }}
+          ref: ${{ inputs.source_ref }}
+          path: package-feed
+          fetch-depth: 1
+
+      - name: Show source information
+        run: |
+          echo "Source repository: ${{ inputs.source_repository }}"
+          echo "Source ref: ${{ inputs.source_ref }}"
+          echo "Source commit:"
+          git -C package-feed rev-parse HEAD
+
+      - name: Space show before
+        run: df -hT
+
+      - name: Build packages
+        uses: openwrt/gh-action-sdk@main
+        env:
+          # SDK架构和OpenWrt版本
+          ARCH: ${{ matrix.arch }}-${{ matrix.branch }}
+
+          # 告诉SDK软件包源码位于package-feed目录
+          FEED_DIR: ${{ github.workspace }}/package-feed
+
+          # 编译后的Feed名称
+          FEEDNAME: nikki
+
+          # 需要编译的软件包
+          PACKAGES: nikki luci-app-nikki
+
+          # 不检查补丁是否需要refresh
+          NO_REFRESH_CHECK: true
+
+          # 显示较完整的编译日志
+          V: s
+
+      - name: List build results
+        if: success()
+        run: |
+          echo "Build output:"
+          find bin/packages/${{ matrix.arch }}/nikki \
+            -maxdepth 1 \
+            -type f \
+            -printf '%f\n' \
+            2>/dev/null || true
+
+      - name: Space show after
+        run: df -hT
+
+      - name: Upload packages
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: nikki_${{ matrix.arch }}-${{ matrix.branch }}
+          path: bin/packages/${{ matrix.arch }}/nikki/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logs_${{ matrix.arch }}-${{ matrix.branch }}
+          path: logs/
+          if-no-files-found: ignore
+          retention-days: 14
