@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: v1.19.28
+  VERSION: v1.19.20
   BUILD_TAGS: with_gvisor
 
 jobs:
