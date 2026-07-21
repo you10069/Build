@@ -1,4 +1,4 @@
-name: Build Mihomo All
+name: Build Mihomo All 1
 
 env:
   VERSION: v1.19.28
