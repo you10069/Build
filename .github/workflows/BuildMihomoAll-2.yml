@@ -1,4 +1,4 @@
-name: Build Mihomo All NEW
+name: Build Mihomo All 2
 
 on:
   workflow_dispatch:
