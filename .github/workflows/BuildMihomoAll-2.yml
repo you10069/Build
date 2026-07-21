@@ -1,0 +1,107 @@
+name: Build Mihomo All NEW
+
+on:
+  workflow_dispatch:
+
+env:
+  VERSION: v1.19.28
+  BUILD_TAGS: with_gvisor
+
+jobs:
+  # ======== 阶段一：并行矩阵编译 ========
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        level: [v1, v2, v3, v4]
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.26'
+        cache: false
+
+    - name: Checkout MihomoFork
+      uses: actions/checkout@v5
+      with:
+        repository: you10069/MihomoFork
+        ref: ${{ env.VERSION }}
+
+    - name: Build Windows AMD64
+      shell: bash
+      run: |
+        export CGO_ENABLED=0
+        export GOOS=windows
+        export GOARCH=amd64
+        export GOAMD64=${{ matrix.level }}
+
+        VERSION_STR="${{ env.VERSION }}-${{ matrix.level }}"
+        OUT="mihomo-${{ matrix.level }}.exe"
+
+        echo "================================================="
+        echo "Building: $OUT"
+        echo "Version: $VERSION_STR"
+        echo "GOOS: $GOOS"
+        echo "GOARCH: $GOARCH"
+        echo "GOAMD64: $GOAMD64"
+        echo "Tags: ${{ env.BUILD_TAGS }}"
+        echo "================================================="
+
+        mkdir -p dist
+
+        go mod download
+
+        go build \
+          -v \
+          -trimpath \
+          -tags "${{ env.BUILD_TAGS }}" \
+          -ldflags "-X github.com/metacubex/mihomo/constant.Version=${VERSION_STR} -s -w -buildid=" \
+          -o "dist/$OUT" \
+          .
+
+    - name: List Built File
+      shell: bash
+      run: |
+        ls -lh dist/
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: build-windows-amd64-${{ matrix.level }}
+        path: dist/*
+        if-no-files-found: error
+        retention-days: 1
+
+  # ======== 阶段二：统一合并与发布 ========
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download All Artifacts
+      uses: actions/download-artifact@v7
+      with:
+        path: release_files
+        merge-multiple: true
+
+    - name: Set TAG_DATE
+      shell: bash
+      run: |
+        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+
+    - name: Upload Release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        name: mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        files: release_files/*
+        draft: false
+        prerelease: true
+        make_latest: false
+
+
+
