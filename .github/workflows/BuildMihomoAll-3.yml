@@ -1,0 +1,147 @@
+name: Build Mihomo All 3
+
+on:
+  workflow_dispatch:
+
+env:
+  VERSION: v1.19.28
+  BUILD_TAGS: with_gvisor
+
+jobs:
+  # ======== 阶段一：并行矩阵编译 ========
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows AMD64
+          - target: windows-amd64-v1
+            goos: windows
+            goarch: amd64
+            cpu_level: v1
+            version_suffix: v1
+            output: mihomo-v1.exe
+
+          - target: windows-amd64-v2
+            goos: windows
+            goarch: amd64
+            cpu_level: v2
+            version_suffix: v2
+            output: mihomo-v2.exe
+
+          - target: windows-amd64-v3
+            goos: windows
+            goarch: amd64
+            cpu_level: v3
+            version_suffix: v3
+            output: mihomo-v3.exe
+
+          - target: windows-amd64-v4
+            goos: windows
+            goarch: amd64
+            cpu_level: v4
+            version_suffix: v4
+            output: mihomo-v4.exe
+
+          # Linux ARM64
+          - target: linux-arm64
+            goos: linux
+            goarch: arm64
+            cpu_level: v8.0
+            version_suffix: linux-arm64
+            output: mihomo-linux-arm64
+
+    steps:
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.26'
+        cache: false
+
+    - name: Checkout MihomoFork
+      uses: actions/checkout@v5
+      with:
+        repository: you10069/MihomoFork
+        ref: ${{ env.VERSION }}
+
+    - name: Build
+      shell: bash
+      run: |
+        export CGO_ENABLED=0
+        export GOOS="${{ matrix.goos }}"
+        export GOARCH="${{ matrix.goarch }}"
+
+        # 设置对应架构的 CPU 指令集级别
+        if [ "$GOARCH" = "amd64" ]; then
+          export GOAMD64="${{ matrix.cpu_level }}"
+        elif [ "$GOARCH" = "arm64" ]; then
+          export GOARM64="${{ matrix.cpu_level }}"
+        fi
+
+        VERSION_STR="${{ env.VERSION }}-${{ matrix.version_suffix }}"
+        OUT="${{ matrix.output }}"
+
+        echo "================================================="
+        echo "Target: ${{ matrix.target }}"
+        echo "Building: $OUT"
+        echo "Version: $VERSION_STR"
+        echo "GOOS: $GOOS"
+        echo "GOARCH: $GOARCH"
+        echo "CPU Level: ${{ matrix.cpu_level }}"
+        echo "Tags: ${{ env.BUILD_TAGS }}"
+        echo "================================================="
+
+        mkdir -p dist
+
+        go mod download
+
+        go build \
+          -v \
+          -trimpath \
+          -tags "${{ env.BUILD_TAGS }}" \
+          -ldflags "-X github.com/metacubex/mihomo/constant.Version=${VERSION_STR} -s -w -buildid=" \
+          -o "dist/$OUT" \
+          .
+
+    - name: List Built File
+      shell: bash
+      run: |
+        ls -lh dist/
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: build-${{ matrix.target }}
+        path: dist/*
+        if-no-files-found: error
+        retention-days: 1
+
+  # ======== 阶段二：统一合并与发布 ========
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download All Artifacts
+      uses: actions/download-artifact@v7
+      with:
+        path: release_files
+        merge-multiple: true
+
+    - name: Set TAG_DATE
+      shell: bash
+      run: |
+        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+
+    - name: Upload Release
+      uses: softprops/action-gh-release@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        name: mihomo-${{ env.VERSION }}-${{ env.TAG_DATE }}
+        files: release_files/*
+        draft: false
+        prerelease: true
+        make_latest: false
