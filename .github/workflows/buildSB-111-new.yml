@@ -104,6 +104,7 @@ jobs:
 
           mkdir -p dist
 
+          go mod tidy
           go build \
             -tags "$TAGS" \
             -v \
