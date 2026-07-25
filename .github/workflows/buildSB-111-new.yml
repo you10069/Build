@@ -1,146 +1,174 @@
 name: build SB 111 new
 
-env:
-  VERSION: v1.11.15
-  ENV_WINDOWS_V1: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v1
-  ENV_WINDOWS_V2: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v2
-  ENV_WINDOWS_V3: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v3
-  ENV_WINDOWS_V4: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v4
-  TAG_WINDOWS: with_gvisor,with_quic,with_utls,with_dhcp,with_ech,with_wireguard,with_reality_server,with_acme,with_clash_api
-  TAG_WINDOWS_ALL: with_gvisor,with_quic,with_utls,with_dhcp,with_ech,with_wireguard,with_reality_server,with_acme,with_clash_api,with_v2ray_api,with_grpc
-
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+env:
+  VERSION: v1.11.15
+
+  TAG_WINDOWS: with_gvisor,with_quic,with_utls,with_dhcp,with_ech,with_wireguard,with_reality_server,with_acme,with_clash_api
+  TAG_WINDOWS_ALL: with_gvisor,with_quic,with_utls,with_dhcp,with_ech,with_wireguard,with_reality_server,with_acme,with_clash_api,with_v2ray_api,with_grpc
+
 jobs:
+  # ======== 阶段一：Windows 并行矩阵编译 ========
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        go_version:
+          - '1.24'
+          - '1.25'
+        level:
+          - v1
+          - v2
+          - v3
+          - v4
+        type:
+          - normal
+          - all
+
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ~1.24
-        cache: false
+      - name: Setup Go ${{ matrix.go_version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: '${{ matrix.go_version }}'
+          cache: false
 
-    - name: git clone
-      run: |
-        git clone -b ${{ env.VERSION }} https://github.com/SagerNet/sing-box
+      - name: Checkout sing-box
+        uses: actions/checkout@v5
+        with:
+          repository: SagerNet/sing-box
+          ref: ${{ env.VERSION }}
 
+      - name: Build Windows
+        shell: bash
+        run: |
+          set -euo pipefail
 
-    - name: Build Windows V1
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V1 }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v1.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          export CGO_ENABLED=0
+          export GOOS=windows
+          export GOARCH=amd64
+          export GOAMD64="${{ matrix.level }}"
 
-    - name: Build Windows V1 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V1 }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v1-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          GO_VERSION_SUFFIX="go${{ matrix.go_version }}"
 
-    - name: Build Windows V2
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V2 }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v2.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          # 选择编译标签
+          if [ "${{ matrix.type }}" = "all" ]; then
+            TAGS="${{ env.TAG_WINDOWS_ALL }}"
+          else
+            TAGS="${{ env.TAG_WINDOWS }}"
+          fi
 
-    - name: Build Windows V2 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V2 }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v2-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          # 程序内部版本号
+          # normal：new-v1.11.15-v1-go1.24
+          # all：new-v1.11.15-v1-all-go1.24
+          VERSION_STR="new-${{ env.VERSION }}-${{ matrix.level }}"
 
-    - name: Build Windows V3
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V3 }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v3.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          if [ "${{ matrix.type }}" = "all" ]; then
+            VERSION_STR="${VERSION_STR}-all"
+          fi
 
-    - name: Build Windows V3 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V3 }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v3-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          VERSION_STR="${VERSION_STR}-${GO_VERSION_SUFFIX}"
 
-    - name: Build Windows V4
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V4 }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v4.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          # 输出文件名
+          # normal：sing-box-new-v1-go1.24.exe
+          # all：sing-box-new-v1-all-go1.24.exe
+          OUT="sing-box-new-${{ matrix.level }}"
 
-    - name: Build Windows V4 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V4 }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v4-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
+          if [ "${{ matrix.type }}" = "all" ]; then
+            OUT="${OUT}-all"
+          fi
 
-    - name: List built files
-      run: |
-        cd sing-box
-        ls -l sing-box-v1 sing-box-v1-all sing-box-v2 sing-box-v2-all sing-box-v3 sing-box-v3-all sing-box-v4 sing-box-v4-all
-        ls -l sing-box-v1-CGO sing-box-v1-all-CGO sing-box-v2-CGO sing-box-v2-all-CGO sing-box-v3-CGO sing-box-v3-all-CGO sing-box-v4-CGO sing-box-v4-all-CGO
-        ls -l sing-box-v1.exe sing-box-v1-all.exe sing-box-v2.exe sing-box-v2-all.exe sing-box-v3.exe sing-box-v3-all.exe sing-box-v4.exe sing-box-v4-all.exe
-        ls -l sing-box-v1-CGO.exe sing-box-v1-all-CGO.exe sing-box-v2-CGO.exe sing-box-v2-all-CGO.exe sing-box-v3-CGO.exe sing-box-v3-all-CGO.exe sing-box-v4-CGO.exe sing-box-v4-all-CGO.exe
-        cd ..
+          OUT="${OUT}-${GO_VERSION_SUFFIX}.exe"
 
-    - name: Set variables
-      run: |
-        echo "TAG_DATE=$(date +%Y%m%d%H%M)" >> $GITHUB_ENV
-      shell: bash
+          echo "================================================="
+          echo "Go version:  ${{ matrix.go_version }}"
+          echo "GOOS:        $GOOS"
+          echo "GOARCH:      $GOARCH"
+          echo "GOAMD64:     $GOAMD64"
+          echo "CGO_ENABLED: $CGO_ENABLED"
+          echo "Build type:  ${{ matrix.type }}"
+          echo "Output:      $OUT"
+          echo "Version:     $VERSION_STR"
+          echo "Tags:        $TAGS"
+          echo "================================================="
 
-    - name: Package
-      run: |
-        mkdir sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        cp sing-box/sing-box-v1 sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2 sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3 sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4 sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all-CGO sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v1-all-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v2-all-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v3-all-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        cp sing-box/sing-box-v4-all-CGO.exe sb-${{ env.VERSION }}-${{ env.TAG_DATE }}/
-        tar -zcvf sb-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
+          go version
+          go env GOOS GOARCH GOAMD64 CGO_ENABLED
 
-    - name: Upload
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        tag: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}
-        file: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
-        asset_name: sb-${{ env.VERSION }}-${{ env.TAG_DATE }}.tar.gz
-        prerelease: true
-        overwrite: false
+          mkdir -p dist
+
+          go build \
+            -tags "$TAGS" \
+            -v \
+            -trimpath \
+            -ldflags "-X github.com/sagernet/sing-box/constant.Version=$VERSION_STR -s -w -buildid=" \
+            -o "dist/$OUT" \
+            ./cmd/sing-box
+
+          echo
+          echo "Build completed:"
+          ls -lh "dist/$OUT"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-windows-new-${{ matrix.level }}-${{ matrix.type }}-go${{ matrix.go_version }}
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 1
+
+  # ======== 阶段二：统一合并与发布 ========
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all Artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: release_files
+          merge-multiple: true
+
+      - name: Check Release Files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Release files:"
+          find release_files -maxdepth 1 -type f -printf '%f\n' | sort
+
+          echo
+          echo "File details:"
+          ls -lh release_files
+
+          FILE_COUNT=$(find release_files -maxdepth 1 -type f -name '*.exe' | wc -l)
+
+          echo
+          echo "Executable count: $FILE_COUNT"
+
+          if [ "$FILE_COUNT" -ne 16 ]; then
+            echo "Expected 16 executable files, but found $FILE_COUNT."
+            exit 1
+          fi
+
+      - name: Set TAG_DATE
+        shell: bash
+        run: |
+          echo "TAG_DATE=$(date -u +%Y%m%d%H%M)" >> "$GITHUB_ENV"
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: sb-new-${{ env.VERSION }}-${{ env.TAG_DATE }}
+          name: sb-new-${{ env.VERSION }}-${{ env.TAG_DATE }}
+          files: release_files/*.exe
+          draft: false
+          prerelease: true
+          make_latest: false
