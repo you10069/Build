@@ -3,21 +3,13 @@ name: build SB 111 new
 env:
   VERSION: v1.11.15
   ENV_LINUX_V1: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v1
-  ENV_LINUX_V1_CGO: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GOAMD64=v1
   ENV_WINDOWS_V1: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v1
-  ENV_WINDOWS_V1_CGO: CGO_ENABLED=1 GOOS=windows GOARCH=amd64 GOAMD64=v1
   ENV_LINUX_V2: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2
-  ENV_LINUX_V2_CGO: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GOAMD64=v2
   ENV_WINDOWS_V2: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v2
-  ENV_WINDOWS_V2_CGO: CGO_ENABLED=1 GOOS=windows GOARCH=amd64 GOAMD64=v2
   ENV_LINUX_V3: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v3
-  ENV_LINUX_V3_CGO: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GOAMD64=v3
   ENV_WINDOWS_V3: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v3
-  ENV_WINDOWS_V3_CGO: CGO_ENABLED=1 GOOS=windows GOARCH=amd64 GOAMD64=v3
   ENV_LINUX_V4: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v4
-  ENV_LINUX_V4_CGO: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GOAMD64=v4
   ENV_WINDOWS_V4: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 GOAMD64=v4
-  ENV_WINDOWS_V4_CGO: CGO_ENABLED=1 GOOS=windows GOARCH=amd64 GOAMD64=v4
   TAG_LINUX: with_gvisor,with_reality_server,with_quic,with_utls,with_ech,with_dhcp,with_wireguard,with_acme,with_clash_api
   TAG_LINUX_ALL: with_gvisor,with_reality_server,with_quic,with_utls,with_ech,with_dhcp,with_wireguard,with_acme,with_clash_api,with_v2ray_api,with_grpc
   TAG_WINDOWS: with_gvisor,with_reality_server,with_quic,with_utls,with_ech,with_dhcp,with_wireguard,with_acme,with_clash_api
