@@ -8,6 +8,7 @@ permissions:
 
 env:
   VERSION: v1.11.15
+  VERSION_NEW: v1.11.15
 
   TAG_WINDOWS: with_gvisor,with_quic,with_utls,with_dhcp,with_ech,with_wireguard,with_reality_server,with_acme,with_clash_api
   TAG_WINDOWS_ALL: with_gvisor,with_quic,with_utls,with_dhcp,with_ech,with_wireguard,with_reality_server,with_acme,with_clash_api,with_v2ray_api,with_grpc
@@ -43,7 +44,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: you10069/SingboxFork
-          ref: ${{ env.VERSION }}
+          ref: ${{ env.VERSION_NEW }}
 
       - name: Build Windows
         shell: bash
