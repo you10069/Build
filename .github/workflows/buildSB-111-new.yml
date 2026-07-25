@@ -41,130 +41,12 @@ jobs:
       run: |
         git clone -b ${{ env.VERSION }} https://github.com/SagerNet/sing-box
 
-    - name: Build Linux V1
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V1 }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v1 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V1 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V1_CGO }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v1-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V1 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V1 }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v1-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V1 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V1_CGO }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v1-all-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V2
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V2 }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v2 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V2 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V2_CGO }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v2-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V2 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V2 }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v2-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V2 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V2_CGO }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v2-all-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V3
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V3 }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v3 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V3 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V3_CGO }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v3-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V3 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V3 }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v3-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V3 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V3_CGO }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v3-all-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V4
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V4 }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v4 -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V4 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V4_CGO }}
-        go build -tags ${{ env.TAG_LINUX }} -v -o sing-box-v4-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V4 All
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V4 }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v4-all -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Linux V4 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_LINUX_V4_CGO }}
-        go build -tags ${{ env.TAG_LINUX_ALL }} -v -o sing-box-v4-all-CGO -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
 
     - name: Build Windows V1
       run: |
         cd sing-box
         go env -w ${{ env.ENV_WINDOWS_V1 }}
         go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v1.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Windows V1 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V1_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v1-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
     - name: Build Windows V1 All
@@ -174,25 +56,11 @@ jobs:
         go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v1-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
-    - name: Build Windows V1 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V1_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v1-all-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
     - name: Build Windows V2
       run: |
         cd sing-box
         go env -w ${{ env.ENV_WINDOWS_V2 }}
         go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v2.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Windows V2 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V2_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v2-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
     - name: Build Windows V2 All
@@ -202,25 +70,11 @@ jobs:
         go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v2-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
-    - name: Build Windows V2 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V2_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v2-all-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
     - name: Build Windows V3
       run: |
         cd sing-box
         go env -w ${{ env.ENV_WINDOWS_V3 }}
         go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v3.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Windows V3 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V3_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v3-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
     - name: Build Windows V3 All
@@ -230,13 +84,6 @@ jobs:
         go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v3-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
-    - name: Build Windows V3 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V3_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v3-all-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
     - name: Build Windows V4
       run: |
         cd sing-box
@@ -244,25 +91,11 @@ jobs:
         go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v4.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
-    - name: Build Windows V4 CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V4_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS }} -v -o sing-box-v4-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
     - name: Build Windows V4 All
       run: |
         cd sing-box
         go env -w ${{ env.ENV_WINDOWS_V4 }}
         go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v4-all.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
-        cd ..
-
-    - name: Build Windows V4 All CGO
-      run: |
-        cd sing-box
-        go env -w ${{ env.ENV_WINDOWS_V4_CGO }}
-        go build -tags ${{ env.TAG_WINDOWS_ALL }} -v -o sing-box-v4-all-CGO.exe -trimpath -ldflags "-X 'github.com/sagernet/sing-box/constant.Version=${{ env.VERSION }}' -s -w -buildid=" ./cmd/sing-box
         cd ..
 
     - name: List built files
