@@ -57,24 +57,34 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: '1.26'
+        go-version: '1.25'
         cache: false
+
+
+    - name: Checkout build repository
+      uses: actions/checkout@v6
 
     - name: Checkout MihomoFork
       uses: actions/checkout@v5
       with:
-        repository: you10069/MihomoFork
+        repository: MetaCubeX/mihomo
         ref: ${{ env.VERSION }}
 
 
+    - name: Disable include-all sorting
+      run: python3 .github/mihomo/disable_include_all_sort.py  --file mihomo/config/config.go
+
     - name: Apply WS path early-data patch
-      run: python3 .github/mihomo/patch_ws_path_ed.py
+      run: python3 .github/mihomo/patch_ws_path_ed.py  --file mihomo/common/convert/v.go
 
     - name: Format patched source
-      run: gofmt -w common/convert/v.go
+      run: gofmt -w mihomo/config/config.go  mihomo/common/convert/v.go
 
-    - name: Test converter
-      run: go test ./common/convert
+    - name: Show applied changes
+      shell: bash
+      run: |
+        git diff --check
+        git diff -- mihomo/common/convert/v.go  mihomo/config/config.go
 
 
     - name: Build
