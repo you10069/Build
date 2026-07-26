@@ -66,6 +66,17 @@ jobs:
         repository: you10069/MihomoFork
         ref: ${{ env.VERSION }}
 
+
+    - name: Apply WS path early-data patch
+      run: python3 .github/mihomo/patch_ws_path_ed.py
+
+    - name: Format patched source
+      run: gofmt -w common/convert/v.go
+
+    - name: Test converter
+      run: go test ./common/convert
+
+
     - name: Build
       shell: bash
       run: |
