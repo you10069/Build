@@ -69,6 +69,7 @@ jobs:
       with:
         repository: MetaCubeX/mihomo
         ref: ${{ env.VERSION }}
+        path: mihomo
 
 
     - name: Disable include-all sorting
@@ -89,6 +90,7 @@ jobs:
 
 
     - name: Build
+      working-directory: mihomo
       shell: bash
       run: |
         export CGO_ENABLED=0
@@ -115,7 +117,7 @@ jobs:
         echo "Tags: ${{ env.BUILD_TAGS }}"
         echo "================================================="
 
-        mkdir -p dist
+        mkdir -p ../dist
 
         go mod download
 
