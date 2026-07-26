@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: v1.19.20
+  VERSION: v1.19.29
   BUILD_TAGS: with_gvisor
 
 jobs:
@@ -64,7 +64,7 @@ jobs:
     - name: Checkout build repository
       uses: actions/checkout@v6
 
-    - name: Checkout MihomoFork
+    - name: Checkout mihomo
       uses: actions/checkout@v5
       with:
         repository: MetaCubeX/mihomo
