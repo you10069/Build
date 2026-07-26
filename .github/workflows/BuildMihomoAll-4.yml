@@ -73,7 +73,7 @@ jobs:
 
 
     - name: Disable include-all sorting
-      run: python3 /mihomo-scripts/disable_include_all_sort.py  --file mihomo/config/config.go
+      run: python3 mihomo-scripts/disable_include_all_sort.py  --file mihomo/config/config.go
 
     - name: Apply WS path early-data patch
       run: python3 mihomo-scripts/patch_ws_path_ed.py  --file mihomo/common/convert/v.go
