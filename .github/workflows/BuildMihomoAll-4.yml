@@ -117,6 +117,8 @@ jobs:
         echo "Tags: ${{ env.BUILD_TAGS }}"
         echo "================================================="
 
+        BUILD_TIME="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
         mkdir -p ../dist
 
         go mod download
@@ -125,8 +127,8 @@ jobs:
           -v \
           -trimpath \
           -tags "${{ env.BUILD_TAGS }}" \
-          -ldflags "-X github.com/metacubex/mihomo/constant.Version=${VERSION_STR} -s -w -buildid=" \
-          -o "dist/$OUT" \
+          -ldflags "-X github.com/metacubex/mihomo/constant.Version=${VERSION_STR} -X github.com/metacubex/mihomo/constant.BuildTime=${BUILD_TIME} -s -w -buildid=" \
+          -o "../dist/$OUT" \
           .
 
     - name: List Built File
