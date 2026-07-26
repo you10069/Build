@@ -81,10 +81,11 @@ jobs:
       run: gofmt -w mihomo/config/config.go  mihomo/common/convert/v.go
 
     - name: Show applied changes
+      working-directory: mihomo
       shell: bash
       run: |
         git diff --check
-        git diff -- mihomo/common/convert/v.go  mihomo/config/config.go
+        git diff -- common/convert/v.go config/config.go
 
 
     - name: Build
