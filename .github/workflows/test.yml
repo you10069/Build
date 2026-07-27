@@ -106,7 +106,7 @@ jobs:
             -tags "$TAGS" \
             -v \
             -trimpath \
-            -ldflags "-X github.com/sagernet/sing-box/constant.Version=$VERSION_STR -s -w -buildid=" \
+            -ldflags "-X github.com/sagernet/sing-box/constant.Version=$VERSION_STR -X internal/godebug.defaultGODEBUG=multipathtcp=0 -checklinkname=0 -s -w -buildid=" \
             -o "dist/$OUT" \
             ./cmd/sing-box
 
