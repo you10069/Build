@@ -1,4 +1,4 @@
-name: Build Mihomo All CMFA arm64
+name: Build custom CMFA arm64
 
 on:
   workflow_dispatch:
@@ -514,22 +514,62 @@ jobs:
           "$apksigner" verify \
             --verbose \
             --print-certs \
-            "$apk" > apk-signing.txt
-          actual_signing_cert_sha256="$(
-            sed -n \
-              's/^Signer #1 certificate SHA-256 digest: //p' \
-              apk-signing.txt |
-              head -n 1 |
-              tr '[:upper:]' '[:lower:]' |
-              tr -d '[:space:]:'
-          )"
-          if [[ "$actual_signing_cert_sha256" != "$SIGNING_CERT_SHA256" ]]; then
-            echo "APK signing certificate does not match the configured release key."
-            echo "Expected: $SIGNING_CERT_SHA256"
-            echo "Actual:   ${actual_signing_cert_sha256:-not found}"
-            exit 1
-          fi
-          echo "Verified APK release signature: $actual_signing_cert_sha256"
+            "$apk" > apk-signing.txt 2>&1
+          python3 - <<'PY'
+          import os
+          import re
+          import sys
+          from pathlib import Path
+
+          pattern = re.compile(
+              r"^Signer (?:#[0-9]+|\(.*\)) "
+              r"certificate SHA-256 digest:\s*([0-9A-Fa-f:]+)\s*$"
+          )
+          lines = Path("apk-signing.txt").read_text(
+              encoding="utf-8", errors="replace"
+          ).splitlines()
+          digests: list[str] = []
+          for line in lines:
+              match = pattern.match(line)
+              if match is None:
+                  continue
+              digest = match.group(1).replace(":", "").lower()
+              if (
+                  re.fullmatch(r"[0-9a-f]{64}", digest)
+                  and digest not in digests
+              ):
+                  digests.append(digest)
+
+          expected = os.environ["SIGNING_CERT_SHA256"].lower()
+          if not digests:
+              print(
+                  "Could not parse an APK signer certificate SHA-256 digest.",
+                  file=sys.stderr,
+              )
+              for line in lines:
+                  normalized = line.lower()
+                  if any(
+                      word in normalized
+                      for word in ("digest", "verified", "warning", "error")
+                  ):
+                      print(line, file=sys.stderr)
+              raise SystemExit(1)
+
+          for digest in digests:
+              print(f"APK signer certificate SHA-256: {digest}")
+
+          if expected not in digests:
+              print(
+                  "APK signing certificate does not match the configured "
+                  "release key.",
+                  file=sys.stderr,
+              )
+              print(f"Expected: {expected}", file=sys.stderr)
+              print(f"Actual:   {' '.join(digests)}", file=sys.stderr)
+              raise SystemExit(1)
+
+          print(f"Verified APK release signature: {expected}")
+          PY
 
           if grep -Eq 'lib/(armeabi-v7a|x86|x86_64)/' apk-contents.txt; then
             echo "The APK still contains a non-arm64 native library."
