@@ -75,18 +75,15 @@ jobs:
     - name: Disable include-all sorting
       run: python3 mihomo-scripts/disable_include_all_sort.py  --file mihomo/config/config.go
 
-    - name: Apply WS path early-data patch
-      run: python3 mihomo-scripts/patch_ws_path_ed.py  --file mihomo/common/convert/v.go
-
     - name: Format patched source
-      run: gofmt -w mihomo/config/config.go  mihomo/common/convert/v.go
-
+      run: gofmt -w mihomo/config/config.go
+      
     - name: Show applied changes
       working-directory: mihomo
       shell: bash
       run: |
         git diff --check
-        git diff -- common/convert/v.go config/config.go
+        git diff -- config/config.go
 
 
     - name: Build
