@@ -42,7 +42,10 @@ def block_span(text: str, marker: str, start: int = 0) -> tuple[int, int] | None
     if marker_at < 0:
         return None
 
-    brace_at = text.find("{", marker_at + len(marker))
+    marker_end = marker_at + len(marker)
+    brace_at = text.find("{", marker_at, marker_end)
+    if brace_at < 0:
+        brace_at = text.find("{", marker_end)
     if brace_at < 0:
         raise SystemExit(f"Opening brace not found after marker: {marker}")
 
@@ -261,6 +264,17 @@ def patch_app_build(root: Path) -> None:
     path = root / "app/build.gradle.kts"
     old = read(path)
     new = old
+    clean_task_marker = 'tasks.getByName("clean", type = Delete::class)'
+    release_cleanup = 'delete(file("release"))'
+    geo_cleanup = "delete(file(geoFilesDownloadDir))"
+    clean_task_count = old.count(clean_task_marker)
+    release_cleanup_count = old.count(release_cleanup)
+    geo_cleanup_count = old.count(geo_cleanup)
+
+    if geo_cleanup_count not in (0, 1):
+        raise SystemExit(
+            "Expected at most one Geo cleanup action in app/build.gradle.kts"
+        )
 
     for import_name in (
         "import java.net.URL",
@@ -279,12 +293,57 @@ def patch_app_build(root: Path) -> None:
     )
     new = remove_line_containing(new, "val geoFilesDownloadDir")
 
+    if new.count(clean_task_marker) != clean_task_count - geo_cleanup_count:
+        raise SystemExit(
+            "Removing the Geo cleanup changed an unexpected clean task"
+        )
+    if new.count(release_cleanup) != release_cleanup_count:
+        raise SystemExit(
+            'The unrelated clean action delete(file("release")) was changed'
+        )
+
     forbidden = ("quickie", "downloadGeoFiles", "geoFilesDownloadDir", *GEO_FILES)
     leftovers = [item for item in forbidden if item.lower() in new.lower()]
     if leftovers:
         raise SystemExit(f"app/build.gradle.kts still contains: {', '.join(leftovers)}")
 
     write_if_changed(path, old, new.rstrip() + "\n")
+
+
+def patch_external_control_actions(root: Path) -> None:
+    path = root / "app/src/main/AndroidManifest.xml"
+    old = read(path)
+    new = old
+
+    for action in ("START_CLASH", "STOP_CLASH", "TOGGLE_CLASH"):
+        official = (
+            'android:name="com.github.metacubex.clash.meta.action.'
+            f'{action}"'
+        )
+        package_scoped = (
+            f'android:name="${{applicationId}}.action.{action}"'
+        )
+        official_count = new.count(official)
+        package_scoped_count = new.count(package_scoped)
+
+        if official_count == 1 and package_scoped_count == 0:
+            new = new.replace(official, package_scoped, 1)
+        elif official_count == 0 and package_scoped_count == 1:
+            pass
+        else:
+            raise SystemExit(
+                f"Expected one unambiguous {action} external-control action; "
+                f"found official={official_count}, "
+                f"package-scoped={package_scoped_count}"
+            )
+
+    if "com.github.metacubex.clash.meta.action." in new:
+        raise SystemExit(
+            "AndroidManifest.xml still contains an official package-scoped "
+            "external-control action"
+        )
+
+    write_if_changed(path, old, new)
 
 
 def patch_main_application(root: Path) -> None:
@@ -455,6 +514,7 @@ def main() -> None:
     write_application_id(root, application_id)
     patch_core_build(root)
     patch_app_build(root)
+    patch_external_control_actions(root)
     patch_main_application(root)
     patch_profile_provider(root)
     patch_new_profile_design(root)
@@ -465,7 +525,8 @@ def main() -> None:
     print(
         f"CMFA source prepared: app={app_name}, applicationId={application_id}, "
         f"version={version_name}, core={core_version}, "
-        f"versionCode={version_code}, ABI=arm64-v8a, QR=off, bundled Geo=off"
+        f"versionCode={version_code}, ABI=arm64-v8a, QR=off, bundled Geo=off, "
+        "external control=package-scoped"
     )
 
 
