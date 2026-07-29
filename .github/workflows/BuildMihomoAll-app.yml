@@ -145,6 +145,98 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Configure stable release signing
+        shell: bash
+        env:
+          ANDROID_SIGNING_KEYSTORE_BASE64: ${{ secrets.MHX_KEYSTORE_BASE64 }}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.MHX_STORE_PASSWORD }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.MHX_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.MHX_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          required_secrets=(
+            ANDROID_SIGNING_KEYSTORE_BASE64
+            ANDROID_SIGNING_STORE_PASSWORD
+            ANDROID_SIGNING_KEY_ALIAS
+            ANDROID_SIGNING_KEY_PASSWORD
+          )
+
+          for secret_name in "${required_secrets[@]}"; do
+            if [[ -z "${!secret_name:-}" ]]; then
+              echo "Required GitHub Actions secret is missing: $secret_name"
+              exit 1
+            fi
+          done
+
+          umask 077
+          printf '%s' "$ANDROID_SIGNING_KEYSTORE_BASE64" |
+            base64 --decode > cmfa/release.keystore
+          test -s cmfa/release.keystore
+
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+
+          def property_value(value: str) -> str:
+              if "\n" in value or "\r" in value:
+                  raise SystemExit("Signing values must be single-line strings")
+
+              escaped: list[str] = []
+              for index, char in enumerate(value):
+                  codepoint = ord(char)
+                  if char == "\\":
+                      escaped.append("\\\\")
+                  elif char == "\t":
+                      escaped.append("\\t")
+                  elif char == "\f":
+                      escaped.append("\\f")
+                  elif char in "=:#!":
+                      escaped.append(f"\\{char}")
+                  elif index == 0 and char == " ":
+                      escaped.append("\\ ")
+                  elif 0x20 <= codepoint <= 0x7E:
+                      escaped.append(char)
+                  else:
+                      utf16 = char.encode("utf-16-be")
+                      escaped.extend(
+                          f"\\u{int.from_bytes(utf16[offset:offset + 2], 'big'):04x}"
+                          for offset in range(0, len(utf16), 2)
+                      )
+              return "".join(escaped)
+
+
+          values = {
+              "keystore.password": os.environ["ANDROID_SIGNING_STORE_PASSWORD"],
+              "key.alias": os.environ["ANDROID_SIGNING_KEY_ALIAS"],
+              "key.password": os.environ["ANDROID_SIGNING_KEY_PASSWORD"],
+          }
+          content = "".join(
+              f"{key}={property_value(value)}\n"
+              for key, value in values.items()
+          )
+          Path("cmfa/signing.properties").write_text(content, encoding="ascii")
+          PY
+
+          chmod 600 cmfa/release.keystore cmfa/signing.properties
+
+          signing_cert_sha256="$(
+            keytool \
+              -exportcert \
+              -keystore cmfa/release.keystore \
+              -storepass:env ANDROID_SIGNING_STORE_PASSWORD \
+              -alias "$ANDROID_SIGNING_KEY_ALIAS" |
+              sha256sum |
+              awk '{print $1}'
+          )"
+          if [[ ! "$signing_cert_sha256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "Could not determine the release signing certificate SHA-256."
+            exit 1
+          fi
+
+          echo "SIGNING_CERT_SHA256=$signing_cert_sha256" >> "$GITHUB_ENV"
+          echo "Release signing certificate SHA-256: $signing_cert_sha256"
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
@@ -275,6 +367,7 @@ jobs:
             build.gradle.kts \
             core/build.gradle.kts \
             app/build.gradle.kts \
+            app/src/main/AndroidManifest.xml \
             app/src/main/java/com/github/kr328/clash/MainApplication.kt \
             app/src/main/java/com/github/kr328/clash/NewProfileActivity.kt \
             design/src/main/java/com/github/kr328/clash/design/NewProfileDesign.kt \
@@ -290,6 +383,18 @@ jobs:
             build.gradle.kts
           grep -F "versionName = \"${APP_VERSION_NAME}\"" build.gradle.kts
           grep -F "versionCode = ${APP_VERSION_CODE}" build.gradle.kts
+          grep -F 'delete(file("release"))' app/build.gradle.kts
+
+          for action in START_CLASH STOP_CLASH TOGGLE_CLASH; do
+            expected='${applicationId}.action.'"${action}"
+            grep -F "$expected" app/src/main/AndroidManifest.xml
+          done
+          if grep -F \
+            'com.github.metacubex.clash.meta.action.' \
+            app/src/main/AndroidManifest.xml; then
+            echo "An official external-control action is still hard-coded."
+            exit 1
+          fi
 
           {
             echo "### Android app build"
@@ -299,11 +404,13 @@ jobs:
             echo "- Version name: ${APP_VERSION_NAME}"
             echo "- Version code: ${APP_VERSION_CODE}"
             echo "- Pinned Mihomo: ${CORE_VERSION}"
+            echo "- External control: package-scoped START/STOP/TOGGLE"
             echo "- Mihomo patches: include-all sorting off; WS path ed on"
+            echo "- Signing certificate SHA-256: \`${SIGNING_CERT_SHA256}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
           if grep -RniE \
-            'quickie|play-services-mlkit|ScanQRCode|ProfileProvider\.QR|downloadGeoFiles' \
+            'quickie|play-services-mlkit|ScanQRCode|ProfileProvider\.QR|downloadGeoFiles|geoFilesDownloadDir' \
             app/build.gradle.kts \
             app/src/main/java/com/github/kr328/clash/NewProfileActivity.kt \
             design/src/main/java/com/github/kr328/clash/design/NewProfileDesign.kt \
@@ -371,11 +478,58 @@ jobs:
             exit 1
           fi
 
+          apksigner="$(
+            find "$ANDROID_SDK_ROOT/build-tools" \
+              -maxdepth 2 \
+              -type f \
+              -name apksigner \
+              -print |
+              sort -V |
+              tail -n 1
+          )"
+          if [[ -z "$apksigner" || ! -x "$apksigner" ]]; then
+            echo "Could not find Android apksigner for APK signature verification."
+            exit 1
+          fi
+
           "$aapt" dump badging "$apk" > apk-badging.txt
           grep -F "package: name='${APPLICATION_ID}'" apk-badging.txt
           grep -F "versionCode='${APP_VERSION_CODE}'" apk-badging.txt
           grep -F "versionName='${APP_VERSION_NAME}'" apk-badging.txt
           grep -F "application-label:'${APP_NAME}'" apk-badging.txt
+
+          "$aapt" dump xmltree "$apk" AndroidManifest.xml > apk-manifest.txt
+          for action in START_CLASH STOP_CLASH TOGGLE_CLASH; do
+            grep -F \
+              "${APPLICATION_ID}.action.${action}" \
+              apk-manifest.txt
+          done
+          if grep -F \
+            'com.github.metacubex.clash.meta.action.' \
+            apk-manifest.txt; then
+            echo "The APK still exposes an official CMFA external-control action."
+            exit 1
+          fi
+
+          "$apksigner" verify \
+            --verbose \
+            --print-certs \
+            "$apk" > apk-signing.txt
+          actual_signing_cert_sha256="$(
+            sed -n \
+              's/^Signer #1 certificate SHA-256 digest: //p' \
+              apk-signing.txt |
+              head -n 1 |
+              tr '[:upper:]' '[:lower:]' |
+              tr -d '[:space:]:'
+          )"
+          if [[ "$actual_signing_cert_sha256" != "$SIGNING_CERT_SHA256" ]]; then
+            echo "APK signing certificate does not match the configured release key."
+            echo "Expected: $SIGNING_CERT_SHA256"
+            echo "Actual:   ${actual_signing_cert_sha256:-not found}"
+            exit 1
+          fi
+          echo "Verified APK release signature: $actual_signing_cert_sha256"
 
           if grep -Eq 'lib/(armeabi-v7a|x86|x86_64)/' apk-contents.txt; then
             echo "The APK still contains a non-arm64 native library."
@@ -399,6 +553,8 @@ jobs:
           output="dist/${APP_FILE_STEM}-arm64-v8a.apk"
           cp "$apk" "$output"
           sha256sum "$output" > "${output}.sha256"
+          printf '%s\n' "$actual_signing_cert_sha256" \
+            > "dist/${APP_FILE_STEM}-signing-cert-sha256.txt"
 
           ls -lh dist
 
