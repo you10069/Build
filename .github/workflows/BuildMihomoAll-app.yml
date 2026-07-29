@@ -303,26 +303,21 @@ jobs:
             ${{ runner.os }}-cmfa-${{ env.VERSION }}-go-
             ${{ runner.os }}-cmfa-go-
 
-      - name: Apply custom Mihomo source patches
+      - name: Disable Mihomo include-all sorting
         shell: bash
         run: |
           set -euo pipefail
           core_dir="cmfa/core/src/foss/golang/clash"
           config_file="$core_dir/config/config.go"
-          convert_file="$core_dir/common/convert/v.go"
 
           python3 mihomo-scripts/disable_include_all_sort.py \
             --file "$config_file"
-          python3 mihomo-scripts/patch_ws_path_ed.py \
-            --file "$convert_file"
 
-          gofmt -w "$config_file" "$convert_file"
+          gofmt -w "$config_file"
           git -C "$core_dir" diff --check
-          git -C "$core_dir" diff -- \
-            config/config.go \
-            common/convert/v.go
+          git -C "$core_dir" diff -- config/config.go
 
-      - name: Test patched Mihomo packages
+      - name: Test patched Mihomo package
         working-directory: cmfa/core/src/foss/golang/clash
         shell: bash
         run: |
@@ -330,8 +325,7 @@ jobs:
           go test \
             -tags "foss with_gvisor cmfa" \
             -count=1 \
-            ./config \
-            ./common/convert
+            ./config
 
       - name: Update embedded CA certificate
         shell: bash
@@ -405,7 +399,7 @@ jobs:
             echo "- Version code: ${APP_VERSION_CODE}"
             echo "- Pinned Mihomo: ${CORE_VERSION}"
             echo "- External control: package-scoped START/STOP/TOGGLE"
-            echo "- Mihomo patches: include-all sorting off; WS path ed on"
+            echo "- Mihomo patch: include-all sorting off"
             echo "- Signing certificate SHA-256: \`${SIGNING_CERT_SHA256}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
