@@ -174,11 +174,18 @@ def patch_root_build(
     if name_count != 1 or code_count != 1:
         raise SystemExit("Could not update versionName/versionCode in build.gradle.kts")
 
-    new = re.sub(
-        r'abiFilters\s*\+=\s*listOf\([^\n]+\)',
-        'abiFilters += listOf("arm64-v8a")',
-        new,
+    ndk_abi_filter_pattern = (
+        r"(?m)^[ \t]*abiFilters\s*\+=\s*listOf\([^\r\n]+\)\r?\n"
     )
+    ndk_abi_filter_count = len(
+        re.findall(ndk_abi_filter_pattern, new)
+    )
+    if ndk_abi_filter_count > 1:
+        raise SystemExit(
+            "Found more than one defaultConfig NDK ABI filter; "
+            "refusing to remove an ambiguous configuration"
+        )
+    new = re.sub(ndk_abi_filter_pattern, "", new, count=1)
     new = re.sub(
         r'abiFilters\("arm64-v8a"[^\n]+\)',
         'abiFilters("arm64-v8a")',
@@ -214,8 +221,12 @@ def patch_root_build(
         raise SystemExit("Could not set the Meta flavor application labels")
     new = new[:meta_begin] + meta_block + new[meta_end:]
 
-    if 'abiFilters += listOf("arm64-v8a")' not in new:
-        raise SystemExit("Failed to restrict the Android NDK ABI list to arm64-v8a")
+    if re.search(r"abiFilters\s*\+=", new):
+        raise SystemExit(
+            "defaultConfig NDK abiFilters must be absent when ABI splits are enabled"
+        )
+    if 'abiFilters("arm64-v8a")' not in new:
+        raise SystemExit("Failed to restrict the CMake ABI list to arm64-v8a")
     if 'include("arm64-v8a")' not in new:
         raise SystemExit("Failed to restrict APK splits to arm64-v8a")
     if "isUniversalApk = false" not in new:
