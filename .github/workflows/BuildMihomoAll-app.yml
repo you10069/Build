@@ -1,1 +1,335 @@
-1
+name: Build MH-X arm64
+
+on:
+  workflow_dispatch:
+
+env:
+  # 手动修改这一行即可选择要构建的 CMFA Tag。
+  VERSION: v2.11.32
+  CMFA_REPOSITORY: MetaCubeX/ClashMetaForAndroid
+  APP_NAME: MH-X
+  APPLICATION_ID: pure.mihomo.x
+
+jobs:
+  build:
+    name: Build MH-X arm64-v8a
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout build repository
+        uses: actions/checkout@v6
+
+      - name: Checkout CMFA and Mihomo submodule
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.CMFA_REPOSITORY }}
+          ref: ${{ env.VERSION }}
+          path: cmfa
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Verify source checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f cmfa/build.gradle.kts
+          test -f cmfa/core/src/foss/golang/clash/go.mod
+          echo "CMFA ref: $(git -C cmfa describe --tags --always --dirty)"
+          echo "Mihomo commit: $(git -C cmfa/core/src/foss/golang/clash rev-parse HEAD)"
+
+      - name: Detect the official Go toolchain
+        id: toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          candidates = [
+              Path("cmfa/.github/workflows/build-release.yaml"),
+              Path("cmfa/.github/workflows/build-release.yml"),
+              Path("cmfa/.github/workflows/build-debug.yaml"),
+              Path("cmfa/.github/workflows/build-debug.yml"),
+          ]
+          workflow = next((path for path in candidates if path.is_file()), None)
+          if workflow is None:
+              raise SystemExit("Cannot find an official CMFA build workflow")
+
+          content = workflow.read_text(encoding="utf-8")
+          match = re.search(r"go-version:\s*['\"]?([^'\"\s]+)", content)
+          if match is None:
+              raise SystemExit(f"Cannot detect go-version from {workflow}")
+
+          go_version = match.group(1)
+          custom_go = "go-download-base-url:" in content
+          root_build = Path("cmfa/build.gradle.kts").read_text(encoding="utf-8")
+          ndk_match = re.search(r'ndkVersion\s*=\s*"([^"]+)"', root_build)
+          if ndk_match is None:
+              raise SystemExit("Cannot detect ndkVersion from cmfa/build.gradle.kts")
+
+          ndk_version = ndk_match.group(1)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"go_version={go_version}\n")
+              output.write(f"custom_go={str(custom_go).lower()}\n")
+              output.write(f"ndk_version={ndk_version}\n")
+
+          print(f"Official workflow: {workflow}")
+          print(f"Go version: {go_version}")
+          print(f"Custom MetaCubeX Go: {custom_go}")
+          print(f"Android NDK version: {ndk_version}")
+          PY
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Ensure required Android NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [ -z "$sdk_root" ]; then
+            echo "ANDROID_SDK_ROOT/ANDROID_HOME is not set."
+            exit 1
+          fi
+
+          ndk_version="${{ steps.toolchain.outputs.ndk_version }}"
+          if [ -d "$sdk_root/ndk/$ndk_version" ]; then
+            echo "Android NDK $ndk_version is already installed."
+          else
+            sdkmanager "ndk;$ndk_version"
+          fi
+
+      - name: Setup standard Go
+        if: steps.toolchain.outputs.custom_go == 'false'
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.toolchain.outputs.go_version }}
+          cache: false
+
+      - name: Setup official MetaCubeX Go
+        if: steps.toolchain.outputs.custom_go == 'true'
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-download-base-url: https://github.com/MetaCubeX/go/releases/download/build
+          go-version: ${{ steps.toolchain.outputs.go_version }}
+          cache: false
+
+      - name: Apply CMFA Go patches
+        working-directory: cmfa
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          patches=("$PWD"/.github/patch/*.patch)
+
+          if (( ${#patches[@]} == 0 )); then
+            echo "This CMFA version has no Go toolchain patches."
+            exit 0
+          fi
+
+          patch_dir="$PWD/.github/patch"
+          cd "$(go env GOROOT)"
+          for patch_file in "$patch_dir"/*.patch; do
+            echo "Applying $(basename "$patch_file")"
+            patch --batch --forward --verbose -p 1 < "$patch_file"
+          done
+
+      - name: Cache Go modules
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-cmfa-${{ env.VERSION }}-go-${{ hashFiles('cmfa/**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-cmfa-${{ env.VERSION }}-go-
+            ${{ runner.os }}-cmfa-go-
+
+      - name: Update embedded CA certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo update-ca-certificates
+          test -f /etc/ssl/certs/ca-certificates.crt
+          cp -f \
+            /etc/ssl/certs/ca-certificates.crt \
+            cmfa/core/src/foss/golang/clash/component/ca/ca-certificates.crt
+
+      - name: Prepare MH-X arm64-only source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 mihomo-scripts/prepare_cmfa_app.py \
+            --root cmfa \
+            --version "${{ env.VERSION }}" \
+            --app-name "${{ env.APP_NAME }}" \
+            --application-id "${{ env.APPLICATION_ID }}"
+
+      - name: Show and validate source changes
+        working-directory: cmfa
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --stat
+          git diff -- \
+            build.gradle.kts \
+            core/build.gradle.kts \
+            app/build.gradle.kts \
+            app/src/main/java/com/github/kr328/clash/MainApplication.kt \
+            app/src/main/java/com/github/kr328/clash/NewProfileActivity.kt \
+            design/src/main/java/com/github/kr328/clash/design/NewProfileDesign.kt \
+            design/src/main/java/com/github/kr328/clash/design/model/ProfileProvider.kt
+
+          grep -Fx "custom.application.id=${APPLICATION_ID}" local.properties
+          grep -Fx "remove.suffix=true" local.properties
+          grep -F \
+            "resValue(\"string\", \"launch_name\", \"${APP_NAME}\")" \
+            build.gradle.kts
+          grep -F \
+            "resValue(\"string\", \"application_name\", \"${APP_NAME}\")" \
+            build.gradle.kts
+
+          if grep -RniE \
+            'quickie|play-services-mlkit|ScanQRCode|ProfileProvider\.QR|downloadGeoFiles' \
+            app/build.gradle.kts \
+            app/src/main/java/com/github/kr328/clash/NewProfileActivity.kt \
+            design/src/main/java/com/github/kr328/clash/design/NewProfileDesign.kt \
+            design/src/main/java/com/github/kr328/clash/design/model/ProfileProvider.kt; then
+            echo "QR or ML Kit source is still present."
+            exit 1
+          fi
+
+      - name: Verify release dependency graph
+        working-directory: cmfa
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon \
+            :app:dependencies \
+            --configuration metaReleaseRuntimeClasspath \
+            > ../cmfa-runtime-dependencies.txt
+
+          if grep -iE \
+            'quickie|mlkit|play-services-mlkit|barcode-scanning' \
+            ../cmfa-runtime-dependencies.txt; then
+            echo "QR/ML Kit dependencies are still in the release runtime classpath."
+            exit 1
+          fi
+
+      - name: Build Meta release APK
+        working-directory: cmfa
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --stacktrace :app:assembleMetaRelease
+
+      - name: Verify and prepare APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t apks < <(
+            find cmfa/app/build/outputs/apk/meta/release \
+              -maxdepth 1 \
+              -type f \
+              -name '*.apk' \
+              -print
+          )
+
+          if (( ${#apks[@]} != 1 )); then
+            echo "Expected exactly one arm64 APK, found ${#apks[@]}."
+            find cmfa/app/build/outputs/apk/meta/release -maxdepth 1 -type f -print
+            exit 1
+          fi
+
+          apk="${apks[0]}"
+          unzip -Z1 "$apk" > apk-contents.txt
+
+          aapt="$(
+            find "$ANDROID_SDK_ROOT/build-tools" \
+              -maxdepth 2 \
+              -type f \
+              -name aapt \
+              -print |
+              sort -V |
+              tail -n 1
+          )"
+          if [[ -z "$aapt" || ! -x "$aapt" ]]; then
+            echo "Could not find Android aapt for APK identity verification."
+            exit 1
+          fi
+
+          "$aapt" dump badging "$apk" > apk-badging.txt
+          grep -F "package: name='${APPLICATION_ID}'" apk-badging.txt
+          grep -F "application-label:'${APP_NAME}'" apk-badging.txt
+
+          if grep -Eq 'lib/(armeabi-v7a|x86|x86_64)/' apk-contents.txt; then
+            echo "The APK still contains a non-arm64 native library."
+            grep -E 'lib/(armeabi-v7a|x86|x86_64)/' apk-contents.txt
+            exit 1
+          fi
+
+          if ! grep -q '^lib/arm64-v8a/' apk-contents.txt; then
+            echo "The APK does not contain arm64-v8a native libraries."
+            exit 1
+          fi
+
+          if grep -Ei \
+            '(^|/)(geoip\.metadb|geosite\.dat|ASN\.mmdb|BundleMRS\.7z)$' \
+            apk-contents.txt; then
+            echo "A removed Geo asset is still packaged in the APK."
+            exit 1
+          fi
+
+          mkdir -p dist
+          output="dist/MH-X-arm64-v8a.apk"
+          cp "$apk" "$output"
+          sha256sum "$output" > "${output}.sha256"
+
+          ls -lh dist
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: MH-X-${{ env.VERSION }}-arm64-v8a
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish prerelease
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v7
+        with:
+          path: release-files
+          merge-multiple: true
+
+      - name: Set release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "RELEASE_TAG=mh-x-${VERSION}-arm64-$(date -u +%Y%m%d%H%M)-${GITHUB_RUN_NUMBER}" \
+            >> "$GITHUB_ENV"
+
+      - name: Upload GitHub prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: MH-X ${{ env.VERSION }} arm64-v8a (no QR / no bundled Geo)
+          files: release-files/*
+          draft: false
+          prerelease: true
+          make_latest: false
