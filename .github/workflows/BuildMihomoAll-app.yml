@@ -211,6 +211,36 @@ jobs:
             ${{ runner.os }}-cmfa-${{ env.VERSION }}-go-
             ${{ runner.os }}-cmfa-go-
 
+      - name: Apply custom Mihomo source patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          core_dir="cmfa/core/src/foss/golang/clash"
+          config_file="$core_dir/config/config.go"
+          convert_file="$core_dir/common/convert/v.go"
+
+          python3 mihomo-scripts/disable_include_all_sort.py \
+            --file "$config_file"
+          python3 mihomo-scripts/patch_ws_path_ed.py \
+            --file "$convert_file"
+
+          gofmt -w "$config_file" "$convert_file"
+          git -C "$core_dir" diff --check
+          git -C "$core_dir" diff -- \
+            config/config.go \
+            common/convert/v.go
+
+      - name: Test patched Mihomo packages
+        working-directory: cmfa/core/src/foss/golang/clash
+        shell: bash
+        run: |
+          set -euo pipefail
+          go test \
+            -tags "foss with_gvisor cmfa" \
+            -count=1 \
+            ./config \
+            ./common/convert
+
       - name: Update embedded CA certificate
         shell: bash
         run: |
@@ -269,6 +299,7 @@ jobs:
             echo "- Version name: ${APP_VERSION_NAME}"
             echo "- Version code: ${APP_VERSION_CODE}"
             echo "- Pinned Mihomo: ${CORE_VERSION}"
+            echo "- Mihomo patches: include-all sorting off; WS path ed on"
           } >> "$GITHUB_STEP_SUMMARY"
 
           if grep -RniE \
