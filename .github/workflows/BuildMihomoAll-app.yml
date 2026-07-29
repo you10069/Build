@@ -1,4 +1,4 @@
-name: Build custom CMFA arm64
+name: Build Mihomo All CMFA arm64
 
 on:
   workflow_dispatch:
