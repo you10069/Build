@@ -1,23 +1,41 @@
-name: Build MH-X arm64
+name: Build custom CMFA arm64
 
 on:
   workflow_dispatch:
 
 env:
-  # 手动修改这一行即可选择要构建的 CMFA Tag。
+  # 日常只需要修改下面四项：源码版本、自编译修订号、应用名称和包名。
   VERSION: v2.11.32
-  CMFA_REPOSITORY: MetaCubeX/ClashMetaForAndroid
+  BUILD_REVISION: 1
   APP_NAME: MH-X
   APPLICATION_ID: pure.mihomo.x
+  CMFA_REPOSITORY: MetaCubeX/ClashMetaForAndroid
 
 jobs:
   build:
-    name: Build MH-X arm64-v8a
+    name: Build custom app arm64-v8a
     runs-on: ubuntu-latest
+    outputs:
+      app_version_name: ${{ steps.prepare.outputs.version_name }}
+      app_version_code: ${{ steps.prepare.outputs.version_code }}
 
     steps:
       - name: Checkout build repository
         uses: actions/checkout@v6
+
+      - name: Derive safe APK and artifact name
+        shell: bash
+        run: |
+          set -euo pipefail
+          file_stem="$(
+            printf '%s' "$APP_NAME" |
+              sed -E 's/[^A-Za-z0-9._-]+/-/g; s/^-+//; s/-+$//'
+          )"
+          if [[ -z "$file_stem" ]]; then
+            echo "APP_NAME cannot be converted to a safe APK file name."
+            exit 1
+          fi
+          echo "APP_FILE_STEM=$file_stem" >> "$GITHUB_ENV"
 
       - name: Checkout CMFA and Mihomo submodule
         uses: actions/checkout@v6
@@ -36,6 +54,46 @@ jobs:
           test -f cmfa/core/src/foss/golang/clash/go.mod
           echo "CMFA ref: $(git -C cmfa describe --tags --always --dirty)"
           echo "Mihomo commit: $(git -C cmfa/core/src/foss/golang/clash rev-parse HEAD)"
+
+      - name: Detect pinned Mihomo version
+        shell: bash
+        run: |
+          set -euo pipefail
+          core_dir="cmfa/core/src/foss/golang/clash"
+
+          if [[ "$(git -C "$core_dir" rev-parse --is-shallow-repository)" == "true" ]]; then
+            git -C "$core_dir" fetch --force --tags --unshallow origin
+          else
+            git -C "$core_dir" fetch --force --tags origin
+          fi
+
+          short_sha="$(git -C "$core_dir" rev-parse --short=7 HEAD)"
+          exact_tag="$(
+            git -C "$core_dir" tag \
+              --points-at HEAD \
+              --list 'v[0-9]*' |
+              sort -V |
+              tail -n 1
+          )"
+
+          if [[ -n "$exact_tag" ]]; then
+            core_version="$exact_tag"
+          else
+            if base_tag="$(
+              git -C "$core_dir" describe \
+                --tags \
+                --match 'v[0-9]*' \
+                --abbrev=0 \
+                HEAD 2>/dev/null
+            )"; then
+              core_version="${base_tag}-g${short_sha}"
+            else
+              core_version="g${short_sha}"
+            fi
+          fi
+
+          echo "CORE_VERSION=$core_version" >> "$GITHUB_ENV"
+          echo "Pinned Mihomo version: $core_version"
 
       - name: Detect the official Go toolchain
         id: toolchain
@@ -163,13 +221,16 @@ jobs:
             /etc/ssl/certs/ca-certificates.crt \
             cmfa/core/src/foss/golang/clash/component/ca/ca-certificates.crt
 
-      - name: Prepare MH-X arm64-only source
+      - name: Prepare custom arm64-only source
+        id: prepare
         shell: bash
         run: |
           set -euo pipefail
           python3 mihomo-scripts/prepare_cmfa_app.py \
             --root cmfa \
             --version "${{ env.VERSION }}" \
+            --build-revision "${{ env.BUILD_REVISION }}" \
+            --core-version "${{ env.CORE_VERSION }}" \
             --app-name "${{ env.APP_NAME }}" \
             --application-id "${{ env.APPLICATION_ID }}"
 
@@ -197,6 +258,18 @@ jobs:
           grep -F \
             "resValue(\"string\", \"application_name\", \"${APP_NAME}\")" \
             build.gradle.kts
+          grep -F "versionName = \"${APP_VERSION_NAME}\"" build.gradle.kts
+          grep -F "versionCode = ${APP_VERSION_CODE}" build.gradle.kts
+
+          {
+            echo "### Android app build"
+            echo
+            echo "- App: ${APP_NAME}"
+            echo "- Package: ${APPLICATION_ID}"
+            echo "- Version name: ${APP_VERSION_NAME}"
+            echo "- Version code: ${APP_VERSION_CODE}"
+            echo "- Pinned Mihomo: ${CORE_VERSION}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
           if grep -RniE \
             'quickie|play-services-mlkit|ScanQRCode|ProfileProvider\.QR|downloadGeoFiles' \
@@ -269,6 +342,8 @@ jobs:
 
           "$aapt" dump badging "$apk" > apk-badging.txt
           grep -F "package: name='${APPLICATION_ID}'" apk-badging.txt
+          grep -F "versionCode='${APP_VERSION_CODE}'" apk-badging.txt
+          grep -F "versionName='${APP_VERSION_NAME}'" apk-badging.txt
           grep -F "application-label:'${APP_NAME}'" apk-badging.txt
 
           if grep -Eq 'lib/(armeabi-v7a|x86|x86_64)/' apk-contents.txt; then
@@ -290,7 +365,7 @@ jobs:
           fi
 
           mkdir -p dist
-          output="dist/MH-X-arm64-v8a.apk"
+          output="dist/${APP_FILE_STEM}-arm64-v8a.apk"
           cp "$apk" "$output"
           sha256sum "$output" > "${output}.sha256"
 
@@ -299,7 +374,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
         with:
-          name: MH-X-${{ env.VERSION }}-arm64-v8a
+          name: ${{ env.APP_FILE_STEM }}-${{ env.VERSION }}-arm64-v8a
           path: dist/*
           if-no-files-found: error
           retention-days: 7
@@ -320,7 +395,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "RELEASE_TAG=mh-x-${VERSION}-arm64-$(date -u +%Y%m%d%H%M)-${GITHUB_RUN_NUMBER}" \
+          tag_stem="$(
+            printf '%s' "$APP_NAME" |
+              tr '[:upper:]' '[:lower:]' |
+              sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//'
+          )"
+          if [[ -z "$tag_stem" ]]; then
+            echo "APP_NAME cannot be converted to a safe release tag."
+            exit 1
+          fi
+          echo "RELEASE_TAG=${tag_stem}-${VERSION}-arm64-$(date +%Y%m%d%H%M)" \
             >> "$GITHUB_ENV"
 
       - name: Upload GitHub prerelease
@@ -328,7 +412,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ env.RELEASE_TAG }}
-          name: MH-X ${{ env.VERSION }} arm64-v8a (no QR / no bundled Geo)
+          name: ${{ env.APP_NAME }} ${{ needs.build.outputs.app_version_name }} arm64-v8a
           files: release-files/*
           draft: false
           prerelease: true
