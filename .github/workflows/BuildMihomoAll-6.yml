@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  VERSION: v1.19.28
+  VERSION: v1.19.21
   BUILD_TAGS: with_gvisor
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
     - name: Setup Go
       uses: actions/setup-go@v6
       with:
-        go-version: '1.26'
+        go-version: '1.25'
         cache: false
 
 
