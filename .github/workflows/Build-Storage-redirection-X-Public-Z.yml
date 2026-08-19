@@ -1,0 +1,497 @@
+# ================================================================
+# Storage Redirect X - 从“别人的 GitHub 仓库”拉取源码并重新编译
+#
+# 使用方法：
+# 1. 在你自己的 GitHub 仓库中新建：
+#      .github/workflows/build-srx-external.yml
+# 2. 把本文件内容完整复制进去并 Commit。
+# 3. 打开你仓库的 Actions -> Build SRX from external source -> Run workflow。
+# 4. 构建完成后，在该次 Actions 页面最下面的 Artifacts 下载 APK / 模块 ZIP。
+#
+# 当前默认源码：
+#   z1298808165/Storage-redirection-X-Public
+# 当前默认分支：
+#   SRX-R
+#
+# 重要：
+# - 这个 workflow 不需要你 Fork 对方仓库。
+# - 你的仓库可以只保存这个 YML；运行时由 actions/checkout 拉取外部公开仓库源码。
+# - 默认会自动应用我们讨论的 Manager UI 最小修复：
+#     floatingBottomBar = false
+#     liquidGlass       = false
+#     blurEffect        = false
+# - 模块核心（Rust / Zygisk / daemon / FUSE）不会因为这个 UI 修复被改动。
+# ================================================================
+
+name: Build SRX from external source
+
+# 只手动运行，避免你每次修改自己仓库里的无关文件都触发大型构建。
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "要编译外部源码的分支 / Tag / Commit SHA"
+        required: true
+        default: "SRX-R"
+        type: string
+
+      apply_manager_ui_fix:
+        description: "自动关闭 Manager 的悬浮底栏 / 液态玻璃 / 模糊默认值"
+        required: true
+        default: true
+        type: boolean
+
+      build_module:
+        description: "是否同时重新编译 arm64 模块 ZIP（本次 UI 修复通常不需要）"
+        required: true
+        default: false
+        type: boolean
+
+# 我们只需要读取公开源码、上传 Actions Artifact，不需要给 workflow 写仓库内容的权限。
+permissions:
+  contents: read
+
+# 这些版本来自当前 SRX-R 源码自己的 release workflow / gradle.properties。
+# 如果将来上游升级 compileSdk / NDK / Rust nightly，按上游 release.yml 同步这里即可。
+env:
+  SOURCE_REPOSITORY: "z1298808165/Storage-redirection-X-Public"
+  SRX_ANDROID_PLATFORM: "platforms;android-37.0"
+  SRX_ANDROID_BUILD_TOOLS: "build-tools;35.0.0"
+  SRX_NDK_VERSION: "30.0.14904198"
+  SRX_RUST_TOOLCHAIN: "nightly-2026-07-14"
+
+  # 非常重要：
+  # 因为当前 Actions 实际运行在“你自己的仓库”，GitHub 默认的 GITHUB_REPOSITORY
+  # 会是你自己的仓库名。如果不覆盖，Manager 的更新源可能会错误指向你的空仓库。
+  # 这里明确告诉 Gradle：构建出来的 Manager 仍然对应外部 SRX 源码仓库。
+  SRX_RELEASE_REPOSITORY: "z1298808165/Storage-redirection-X-Public"
+  SRX_OFFICIAL_RELEASE_REPOSITORY: "Kindness-Kismet/Storage-redirection-X-Public"
+
+jobs:
+  # ==============================================================
+  # Job 1：编译 Manager APK
+  # ==============================================================
+  build-manager:
+    name: Build patched Manager APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ------------------------------------------------------------
+      # 1. 拉取“别人的仓库”源码
+      #
+      # repository: 指定外部 owner/repo。
+      # ref:        使用 Run workflow 时输入的分支 / tag / commit。
+      # path:       把源码放到当前 runner 的 source/ 子目录，避免和你自己的仓库混在一起。
+      # fetch-depth: 0 是因为 SRX 的 Gradle 版本号生成逻辑会读取 Git 历史。
+      # ------------------------------------------------------------
+      - name: Checkout external SRX source
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.SOURCE_REPOSITORY }}
+          ref: ${{ inputs.source_ref }}
+          path: source
+          fetch-depth: 0
+
+      # ------------------------------------------------------------
+      # 2. 打印本次实际编译的 commit，方便以后确认 APK 到底来自哪一版源码。
+      # ------------------------------------------------------------
+      - name: Show checked-out source revision
+        working-directory: source
+        run: |
+          echo "Repository : $SOURCE_REPOSITORY"
+          echo "Requested  : ${{ inputs.source_ref }}"
+          echo "Commit     : $(git rev-parse HEAD)"
+          echo "Short SHA  : $(git rev-parse --short HEAD)"
+          git log -1 --oneline
+
+      # ------------------------------------------------------------
+      # 3. 自动应用 Manager UI 最小修复
+      #
+      # 只改：
+      #   app/src/main/java/org/srx/manager/data/PreferencesRepository.kt
+      #
+      # 改动内容：
+      #   - UiPreferences 第一帧默认值：true -> false
+      #   - DataStore 没有保存值时的 fallback：true -> false
+      #
+      # 为什么两层都改：
+      #   StateFlow 启动时会先使用 UiPreferences()，如果这里只改 DataStore fallback，
+      #   第一帧仍可能先拿到 true，然后进入 FloatingBottomBar -> RuntimeShader 而崩溃。
+      #
+      # 脚本会严格检查旧文本必须存在；如果上游以后改了源码结构，它会直接失败，
+      # 而不是静默“看似构建成功但实际上没有打补丁”。
+      # ------------------------------------------------------------
+      - name: Apply Manager UI compatibility patch
+        if: ${{ inputs.apply_manager_ui_fix }}
+        working-directory: source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("app/src/main/java/org/srx/manager/data/PreferencesRepository.kt")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  "val floatingBottomBar: Boolean = true,",
+                  "val floatingBottomBar: Boolean = false,",
+              ),
+              (
+                  "val liquidGlass: Boolean = true,",
+                  "val liquidGlass: Boolean = false,",
+              ),
+              (
+                  "val blurEffect: Boolean = true,",
+                  "val blurEffect: Boolean = false,",
+              ),
+              (
+                  "floatingBottomBar = prefs[floatingBottomBarKey] ?: true,",
+                  "floatingBottomBar = prefs[floatingBottomBarKey] ?: false,",
+              ),
+              (
+                  "liquidGlass = prefs[liquidGlassKey] ?: true,",
+                  "liquidGlass = prefs[liquidGlassKey] ?: false,",
+              ),
+              (
+                  "prefs[blurEffectKey] ?: ((prefs[legacyLiquidGlassBlurKey] ?: 0.7f) > 0.01f),",
+                  "prefs[blurEffectKey] ?: false,",
+              ),
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(
+                      f"Patch aborted: expected exactly 1 occurrence of {old!r}, found {count}. "
+                      "Upstream source probably changed; review PreferencesRepository.kt first."
+                  )
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8")
+          print(f"Patched: {path}")
+          PY
+
+          echo
+          echo "----- Patch result -----"
+          git diff -- app/src/main/java/org/srx/manager/data/PreferencesRepository.kt
+
+      # ------------------------------------------------------------
+      # 4. 安装 JDK 21
+      #
+      # 当前 SRX-R app/build.gradle.kts 使用 Java 21 / JVM 21。
+      # ------------------------------------------------------------
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # ------------------------------------------------------------
+      # 5. 配置 Gradle
+      #
+      # 不自己安装 Gradle，直接使用外部源码仓库自带的 ./gradlew。
+      # setup-gradle 主要负责 Gradle 环境与缓存。
+      # ------------------------------------------------------------
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.1.0
+        with:
+          cache-read-only: false
+
+      # ------------------------------------------------------------
+      # 6. 配置 Android SDK command-line 环境
+      # ------------------------------------------------------------
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      # ------------------------------------------------------------
+      # 7. 安装源码当前要求的 Android Platform / Build Tools
+      #
+      # SRX-R 当前 compileSdk 是 37.0；官方 release workflow 同样安装这些组件。
+      # Manager APK 本身不需要 NDK，所以这个 Job 不安装 NDK，节省时间。
+      # ------------------------------------------------------------
+      - name: Install Android platform and build tools
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if sdkmanager "$SRX_ANDROID_PLATFORM" "$SRX_ANDROID_BUILD_TOOLS"; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "sdkmanager failed after 3 attempts" >&2
+              exit 1
+            fi
+
+            rm -rf "$ANDROID_HOME/.temp"
+            sleep $((attempt * 10))
+          done
+
+      # ------------------------------------------------------------
+      # 8. 生成一个“仅供自编译使用”的临时 Release 签名证书
+      #
+      # 为什么要这样做：
+      #   上游 release workflow 使用作者自己的 GitHub Secrets 私钥；你拿不到作者私钥。
+      #   没有签名时 release APK 不能直接安装。
+      #
+      # 注意：
+      #   这个 key 每次 Actions 都会重新生成，因此它不是长期稳定的发布签名。
+      #   Release APK 包名仍为 org.srx.manager，但签名和官方 APK 不同，
+      #   所以不能直接覆盖安装官方版；需要先卸载官方 Manager。
+      #
+      #   Debug APK 的包名是 org.srx.manager.debug，可与官方版并存，
+      #   建议先安装 Debug APK 验证这次 RuntimeShader 闪退是否已经消失。
+      # ------------------------------------------------------------
+      - name: Generate temporary release signing key
+        working-directory: source
+        shell: bash
+        run: |
+          mkdir -p keystore
+
+          keytool -genkeypair \
+            -keystore keystore/srx-ci-release.jks \
+            -storepass srx_ci_123456 \
+            -keypass srx_ci_123456 \
+            -alias srx-ci \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 3650 \
+            -dname "CN=SRX CI Build,O=Personal Build,C=US" \
+            -noprompt
+
+      # ------------------------------------------------------------
+      # 9. 编译 APK
+      #
+      # 一次同时构建：
+      #   :app:assembleDebug   -> 可与官方版并存，便于先测试
+      #   :app:assembleRelease -> 使用上一步的临时 key 签名
+      #
+      # SRX_RELEASE_BRANCH 显式设为外部源码 ref，避免 Gradle 误把“你的仓库分支名”
+      # 写进 Manager 的更新配置。
+      # ------------------------------------------------------------
+      - name: Build Debug and Release Manager APKs
+        working-directory: source
+        env:
+          SRX_RELEASE_BRANCH: ${{ inputs.source_ref }}
+          SRX_APP_SIGNING_STORE_FILE: keystore/srx-ci-release.jks
+          SRX_APP_SIGNING_STORE_PASSWORD: srx_ci_123456
+          SRX_APP_SIGNING_KEY_ALIAS: srx-ci
+          SRX_APP_SIGNING_KEY_PASSWORD: srx_ci_123456
+        shell: bash
+        run: |
+          chmod +x ./gradlew
+
+          ./gradlew \
+            --no-daemon \
+            --console=plain \
+            --stacktrace \
+            :app:assembleDebug \
+            :app:assembleRelease
+
+      # ------------------------------------------------------------
+      # 10. 收集和重命名最终 APK，方便下载后直接识别。
+      # ------------------------------------------------------------
+      - name: Collect APK outputs
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          OUT="build/custom-artifacts"
+          mkdir -p "$OUT"
+
+          DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
+          RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
+
+          test -f "$DEBUG_APK"
+          test -f "$RELEASE_APK"
+
+          cp "$DEBUG_APK" \
+            "$OUT/storage-redirect-x-manager-${SHORT_SHA}-patched-debug.apk"
+
+          cp "$RELEASE_APK" \
+            "$OUT/storage-redirect-x-manager-${SHORT_SHA}-patched-release.apk"
+
+          # 同时保存本次临时签名证书，只是为了让你知道本次 Release APK 是用什么签的。
+          # 不建议把这个临时 key 当成正式长期发布密钥。
+          cp keystore/srx-ci-release.jks "$OUT/srx-ci-release-TEST-ONLY.jks"
+
+          echo "----- Output files -----"
+          ls -lh "$OUT"
+
+          # 输出 SHA-256，下载后可以校验文件是否完整。
+          sha256sum "$OUT"/* | tee "$OUT/SHA256SUMS.txt"
+
+      # ------------------------------------------------------------
+      # 11. 把 APK 上传到本次 Actions 的 Artifacts。
+      #
+      # 构建完成后：
+      #   GitHub -> 你的仓库 -> Actions -> 本次运行 -> 页面最下方 Artifacts
+      # 下载这个压缩包即可。
+      # ------------------------------------------------------------
+      - name: Upload Manager APK artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: srx-manager-patched-${{ inputs.source_ref }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 6
+          path: |
+            source/build/custom-artifacts/*.apk
+            source/build/custom-artifacts/*.jks
+            source/build/custom-artifacts/SHA256SUMS.txt
+
+  # ==============================================================
+  # Job 2：可选，重新编译 arm64 Zygisk 模块 ZIP
+  #
+  # 这次 RuntimeShader 修复只属于 Manager UI，所以默认 build_module=false。
+  # 只有你确实也想验证“整个模块从源码可重复构建”时才打开这个选项。
+  # ==============================================================
+  build-module:
+    name: Build arm64 module ZIP
+    if: ${{ inputs.build_module }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      # 1. 同样拉取外部 SRX-R 源码。
+      - name: Checkout external SRX source
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.SOURCE_REPOSITORY }}
+          ref: ${{ inputs.source_ref }}
+          path: source
+          fetch-depth: 0
+
+      # 2. Rust build.rs / Hooker.dex 构建链会使用 Java。
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # 3. 准备 Android SDK command-line tools。
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+
+      # 4. 模块编译需要 NDK；版本严格跟当前 SRX-R gradle.properties 对齐。
+      - name: Install Android platform, build tools and NDK
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if sdkmanager \
+              "$SRX_ANDROID_PLATFORM" \
+              "$SRX_ANDROID_BUILD_TOOLS" \
+              "ndk;$SRX_NDK_VERSION"; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+
+            rm -rf "$ANDROID_HOME/.temp" "$ANDROID_HOME/ndk/$SRX_NDK_VERSION"
+            sleep $((attempt * 10))
+          done
+
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$SRX_NDK_VERSION" >> "$GITHUB_ENV"
+
+      # 5. 安装源码当前固定的 Rust nightly，并添加 Android arm64 target。
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.SRX_RUST_TOOLCHAIN }}
+          targets: aarch64-linux-android
+
+      # 6. 某些 native 依赖 / build.rs 需要 CMake 与 Ninja。
+      - name: Install CMake and Ninja
+        shell: bash
+        run: |
+          if ! command -v cmake >/dev/null || ! command -v ninja >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y cmake ninja-build
+          fi
+
+      # 7. 告诉 Cargo：Android arm64 的 linker 应使用 NDK 中的 clang。
+      - name: Configure Cargo Android linker
+        working-directory: source
+        shell: bash
+        run: |
+          mkdir -p .cargo
+          cat > .cargo/config.toml <<'EOF'
+          [target.aarch64-linux-android]
+          linker = "aarch64-linux-android29-clang"
+          ar = "llvm-ar"
+          EOF
+
+          echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_PATH"
+
+      # 8. 生成与源码一致的 CI 版本号 / versionCode，供 module.prop 使用。
+      - name: Resolve module version
+        id: version
+        working-directory: source
+        shell: bash
+        run: |
+          python3 .github/scripts/resolve_build_version.py \
+            --format github >> "$GITHUB_OUTPUT"
+
+          echo "Resolved version information:"
+          cat "$GITHUB_OUTPUT"
+
+      # 9. 编译 Rust Zygisk .so 和 srx_daemon。
+      - name: Build arm64 native module binaries
+        working-directory: source
+        env:
+          CXXFLAGS: "-Wno-error=unused-but-set-variable"
+        shell: bash
+        run: |
+          cargo build --target aarch64-linux-android --release
+
+          test -f target/aarch64-linux-android/release/libsrx_core.so
+          test -f target/aarch64-linux-android/release/srx_daemon
+
+          mkdir -p build/module-bin
+          cp target/aarch64-linux-android/release/libsrx_core.so build/module-bin/libsrx_core.so
+          cp target/aarch64-linux-android/release/srx_daemon build/module-bin/srx_daemon
+
+      # 10. 调用上游自己的 package_module.sh 打包，避免我们自己猜模块目录结构。
+      - name: Package arm64 module ZIP
+        working-directory: source
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+        shell: bash
+        run: |
+          mkdir -p build/custom-module
+
+          bash .github/scripts/package_module.sh \
+            "$VERSION" \
+            "$VERSION_CODE" \
+            build/module-bin/libsrx_core.so \
+            build/module-bin/srx_daemon \
+            "build/custom-module/storage.redirect.x-v${VERSION}-custom-arm64.zip"
+
+          test -f "build/custom-module/storage.redirect.x-v${VERSION}-custom-arm64.zip"
+          unzip -l "build/custom-module/storage.redirect.x-v${VERSION}-custom-arm64.zip" | grep -q 'module.prop'
+          unzip -l "build/custom-module/storage.redirect.x-v${VERSION}-custom-arm64.zip" | grep -q 'zygisk/arm64-v8a.so'
+
+          sha256sum build/custom-module/*.zip \
+            | tee build/custom-module/SHA256SUMS.txt
+
+      # 11. 上传模块 ZIP。
+      - name: Upload module artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: srx-module-arm64-${{ inputs.source_ref }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+          path: |
+            source/build/custom-module/*.zip
+            source/build/custom-module/SHA256SUMS.txt
