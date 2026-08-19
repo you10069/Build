@@ -23,7 +23,7 @@
 # - 模块核心（Rust / Zygisk / daemon / FUSE）不会因为这个 UI 修复被改动。
 # ================================================================
 
-name: Build SRX from external source
+name: Build SRX
 
 # 只手动运行，避免你每次修改自己仓库里的无关文件都触发大型构建。
 on:
