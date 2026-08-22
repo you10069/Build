@@ -1,4 +1,4 @@
-name: Build Mihomo All 4
+name: Build Mihomo All 4 sort ws
 
 on:
   workflow_dispatch:
