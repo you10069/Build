@@ -23,15 +23,15 @@ on:
 #   UPSTREAM_BRANCH: dev
 #   WORK_DIR: ./acc-source
 
-env:
-  UPSTREAM_REPO: you10069/acc-no-mount
-  UPSTREAM_BRANCH: dev-webui
-  WORK_DIR: ./acc-source
-
 # env:
 #   UPSTREAM_REPO: you10069/acc-no-mount
-#   UPSTREAM_BRANCH: dev-webui-ksu
+#   UPSTREAM_BRANCH: dev-webui
 #   WORK_DIR: ./acc-source
+
+env:
+  UPSTREAM_REPO: you10069/acc-no-mount
+  UPSTREAM_BRANCH: dev-webui-ksu
+  WORK_DIR: ./acc-source
 
 jobs:
   build:
