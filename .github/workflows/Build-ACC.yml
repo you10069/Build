@@ -56,11 +56,11 @@ jobs:
 
       - name: List built artifacts
         working-directory: ${{ env.WORK_DIR }}
-        run: ls -lh *.zip *.tgz
+        run: ls -lh _builds/*/*
 
       - name: Upload build zip artifact
         uses: actions/upload-artifact@v6
         with:
           name: acc-module-zip
-          path: ${{ env.WORK_DIR }}/*.zip
+          path: ${{ env.WORK_DIR }}/_builds/**/*.zip
           if-no-files-found: error
