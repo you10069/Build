@@ -8,15 +8,15 @@ on:
 #   UPSTREAM_BRANCH: dev
 #   WORK_DIR: ./acc-source
 
-env:
-  UPSTREAM_REPO: farrukh2002/acc-webui-kernelsu
-  UPSTREAM_BRANCH: dev
-  WORK_DIR: ./acc-source
-
 # env:
-#   UPSTREAM_REPO: mkhairil43/acc      # acc web
+#   UPSTREAM_REPO: farrukh2002/acc-webui-kernelsu
 #   UPSTREAM_BRANCH: dev
 #   WORK_DIR: ./acc-source
+
+env:
+  UPSTREAM_REPO: mkhairil43/acc      # acc web
+  UPSTREAM_BRANCH: dev
+  WORK_DIR: ./acc-source
 
 # env:
 #   UPSTREAM_REPO: ccccoisini/acc      # acc no mount
