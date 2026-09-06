@@ -18,14 +18,19 @@ on:
 #   UPSTREAM_BRANCH: dev
 #   WORK_DIR: ./acc-source
 
+# env:
+#   UPSTREAM_REPO: ccccoisini/acc      # acc no mount
+#   UPSTREAM_BRANCH: dev
+#   WORK_DIR: ./acc-source
+
 env:
-  UPSTREAM_REPO: ccccoisini/acc      # acc no mount
-  UPSTREAM_BRANCH: dev
+  UPSTREAM_REPO: you10069/acc-no-mount
+  UPSTREAM_BRANCH: dev-webui
   WORK_DIR: ./acc-source
 
 # env:
-#   UPSTREAM_REPO: VR-25/acc
-#   UPSTREAM_BRANCH: dev
+#   UPSTREAM_REPO: you10069/acc-no-mount
+#   UPSTREAM_BRANCH: dev-webui-ksu
 #   WORK_DIR: ./acc-source
 
 jobs:
