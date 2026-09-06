@@ -1,4 +1,4 @@
-name: Build ACC (Upstream Source)
+name: Build ACC
 
 on:
   workflow_dispatch: # 手动运行
