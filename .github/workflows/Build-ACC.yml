@@ -1,0 +1,46 @@
+name: Build ACC (Upstream Source)
+
+on:
+  workflow_dispatch: # 手动运行
+
+env:
+  UPSTREAM_REPO: VR-25/acc
+  UPSTREAM_BRANCH: dev
+  WORK_DIR: ./acc-source
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Flashable Zip
+    steps:
+      - name: Checkout your workflow repo
+        uses: actions/checkout@v4
+
+      - name: Clone upstream ACC source
+        run: |
+          rm -rf ${{ env.WORK_DIR }}
+          git clone --depth 1 --branch ${{ env.UPSTREAM_BRANCH }} \
+            https://github.com/${{ env.UPSTREAM_REPO }}.git \
+            ${{ env.WORK_DIR }}
+
+      # ==========【可选：在这里放入你的自定义修改】==========
+      # 示例：复制你仓库里预设好的 config.txt 覆盖上游配置
+      # run: cp -v ./my-custom-config/config.txt ${{ env.WORK_DIR }}/config.txt
+
+      - name: Build official flashable zip
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          chmod +x ./*.sh
+          sh check-syntax.sh
+          sh build.sh
+
+      - name: List built artifacts
+        working-directory: ${{ env.WORK_DIR }}
+        run: ls -lh *.zip *.tgz
+
+      - name: Upload build zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: acc-module-zip
+          path: ${{ env.WORK_DIR }}/*.zip
+          if-no-files-found: error
