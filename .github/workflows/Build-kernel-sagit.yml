@@ -1,5 +1,5 @@
 # A simple action usage
-name: Build Kernel
+name: Build Kernel sagit
 on:
   workflow_dispatch:
 
