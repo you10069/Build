@@ -12,7 +12,8 @@ jobs:
 
     steps:
     - name: Build
-      uses: dabao1955/kernel_build_action@main
+      # uses: dabao1955/kernel_build_action@main
+      uses: dabao1955/kernel_build_action@legacy
       with:
         kernel-url: https://github.com/crdroidandroid/android_kernel_xiaomi_msm8998
         kernel-branch: "14.0"
