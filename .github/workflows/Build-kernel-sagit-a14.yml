@@ -43,15 +43,15 @@ jobs:
           aosp-clang: true
           aosp-clang-version: r383902   # default = r383902
 	        # https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+/mirror-goog-main-llvm-toolchain-source/README.md
-			# AOSP官方预编译Clang编译器分支说明：
-			#   main-kernel               r596125   (最新编译器,适合5.10+新内核)
-			#   main-kernel-2026          r584948c
-			#   main-kernel-2025          r547379
-			#   main-kernel-build-2024    r510928
-			#   master-kernel-build-2022  r450784e  ✅ 安全选项，4.4/4.9/4.19老内核首选
-			#   master-kernel-build-2021  r416183b  ✅ 安全选项，4.4/4.9/4.19老内核首选
-		  # other-clang-url: https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android16-release/clang-r547379.tar.gz   # Google Clang 19.x
-		  ## other-clang-branch: main
+    			# AOSP官方预编译Clang编译器分支说明：
+    			#   main-kernel               r596125   (最新编译器,适合5.10+新内核)
+    			#   main-kernel-2026          r584948c
+    			#   main-kernel-2025          r547379
+    			#   main-kernel-build-2024    r510928
+    			#   master-kernel-build-2022  r450784e  ✅ 安全选项，4.4/4.9/4.19老内核首选
+    			#   master-kernel-build-2021  r416183b  ✅ 安全选项，4.4/4.9/4.19老内核首选
+    		  # other-clang-url: https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android16-release/clang-r547379.tar.gz   # Google Clang 19.x
+    		  ## other-clang-branch: main
 
 
           aosp-gcc: true
