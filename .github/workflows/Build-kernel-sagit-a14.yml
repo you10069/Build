@@ -24,11 +24,11 @@ jobs:
         # vendor-dir: false
 
         config: vendor/xiaomi/mi8998_defconfig
-        # config-from-boot: false
+        config-from-boot: true
         # merge-configs: false   ["arch/arm64/configs/my.config"]
 
         arch: arm64
-        android-version: 14
+        android-version: 12
 
         ksu: false
         ksu-version: v0.9.5
@@ -42,7 +42,7 @@ jobs:
 
 
         aosp-clang: true
-        aosp-clang-version: r450784e   # default = r383902
+        aosp-clang-version: r383902   # default = r383902
         # https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+/mirror-goog-main-llvm-toolchain-source/README.md
         # AOSP官方预编译Clang编译器分支说明：
         #   main-kernel               r596125   (最新编译器,适合5.10+新内核)
@@ -68,7 +68,7 @@ jobs:
 
         anykernel3: true
         # anykernel3-url: https://github.com/username/AnyKernel3
-        # bootimg-url: https://github.com/username/AnyKernel3
+        bootimg-url: https://github.com/you10069/KernelSU_Action/releases/download/Cr10.11/boot.img
 
         release: false 
         access-token: ${{ secrets.GITHUB_TOKEN }}
