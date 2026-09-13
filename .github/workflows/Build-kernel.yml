@@ -38,9 +38,9 @@ jobs:
           extra-make-args: '["CLANG_TRIPLE=aarch64-linux-gnu-","CROSS_COMPILE=aarch64-linux-","CROSS_COMPILE_ARM32=arm-linux-gnueabihf-"]' # 必要参数
           anykernel3: true
 
-#      - name: Upload kernel image
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: kernel-Image.gz-dtb
-#          path: kernel/source/arch/arm64/boot/Image.gz-dtb
-#          retention-days: 7
+      - name: Upload kernel image
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-Image.gz-dtb
+          path: kernel/source/arch/arm64/boot/Image.gz-dtb
+          retention-days: 7
