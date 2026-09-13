@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # ubuntu-latest
+    runs-on: ubuntu-latest   # ubuntu-latest  ubuntu-22.04
 
     steps:
     - name: Build
@@ -20,11 +20,11 @@ jobs:
 
         # vendor: false
         # vendor-url: https://github.com/AcmeUI-Devices/android_kernel_xiaomi_cas
-        # vendor-branch: taffy
+        # vendor-branch: 14.0
         # vendor-dir: false
 
         config: vendor/xiaomi/mi8998_defconfig
-        config-from-boot: false
+        # config-from-boot: false
         # merge-configs: false   ["arch/arm64/configs/my.config"]
 
         arch: arm64
@@ -70,7 +70,7 @@ jobs:
         # anykernel3-url: https://github.com/username/AnyKernel3
         # bootimg-url: https://github.com/username/AnyKernel3
 
-        release: fasle
+        release: false 
         access-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload kernel image
