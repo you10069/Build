@@ -1,4 +1,4 @@
-name: Build Kernel sagit test
+name: Build Kernel sagit A14
 
 on:
   workflow_dispatch:
