@@ -42,7 +42,7 @@ jobs:
 
 
         aosp-clang: true
-        aosp-clang-version: r383902   # default = r383902
+        aosp-clang-version: r450784e   # default = r383902
         # https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+/mirror-goog-main-llvm-toolchain-source/README.md
         # AOSP官方预编译Clang编译器分支说明：
         #   main-kernel               r596125   (最新编译器,适合5.10+新内核)
