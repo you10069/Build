@@ -72,9 +72,4 @@ jobs:
           release: fasle
           access-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload kernel image
-        uses: actions/upload-artifact@v7
-        with:
-          name: kernel
-          path: kernel/source/arch/arm64/boot/Image.gz-dtb
-          retention-days: 7
+
