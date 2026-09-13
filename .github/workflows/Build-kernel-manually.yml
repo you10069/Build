@@ -1,0 +1,94 @@
+name: Build Kernel Manually
+
+on:
+  workflow_dispatch:
+    inputs:
+      defconfig:
+        description: 'Defconfig name'
+        required: true
+        default: 'local_defconfig'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          repository: fructosecloud/android_kernel_xiaomi_msm8998
+          ref: lineage-23.2   # 修改为实际分支
+          path: kernel
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            bc bison build-essential ccache curl \
+            flex g++-multilib git gperf \
+            liblz4-tool libncurses5-dev libssl-dev \
+            libxml2-utils lzop rsync schedtool \
+            zip zlib1g-dev
+  
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          max-size: '4G'
+
+      - name: Download Clang (r522817)
+        run: |
+          mkdir -p $HOME/clang
+          curl -L https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android16-release/clang-r547379.tar.gz | tar -xz -C $HOME/clang
+          echo "$HOME/clang/bin" >> $GITHUB_PATH
+
+      - name: Download Bootlin GCC (aarch64)
+        run: |
+          mkdir -p $HOME/gcc64
+          curl -L https://toolchains.bootlin.com/downloads/releases/toolchains/aarch64/tarballs/aarch64--glibc--stable-2025.08-1.tar.xz | tar -xJ -C $HOME/gcc64 --strip-components=1
+          echo "$HOME/gcc64/bin" >> $GITHUB_PATH
+
+      - name: Download Bootlin GCC (arm)
+        run: |
+          mkdir -p $HOME/gcc32
+          curl -L https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/armv7-eabihf--glibc--stable-2025.08-1.tar.xz | tar -xJ -C $HOME/gcc32 --strip-components=1
+          echo "$HOME/gcc32/bin" >> $GITHUB_PATH
+
+      - name: Build Kernel
+        run: |
+          cd kernel
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-
+          export CROSS_COMPILE_ARM32=arm-linux-gnueabihf-
+          export CLANG_TRIPLE=aarch64-linux-gnu-
+          export CC=clang
+          export PATH=/usr/lib/ccache:$PATH   # 启用 ccache（可选）
+          
+          # 清理并配置
+          make O=out mrproper
+          make O=out ${{ github.event.inputs.defconfig }}
+          
+          # 编译
+          make O=out ARCH=arm64 -j$(nproc) \
+            CC=clang \
+            CROSS_COMPILE=aarch64-linux- \
+            CROSS_COMPILE_ARM32=arm-linux-gnueabihf- \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            WERROR=0 \
+            KCFLAGS="-Wno-incompatible-function-pointer-types"
+          
+          # 产物检查
+          if [ -f out/arch/arm64/boot/Image.gz-dtb ]; then
+            echo "Build successful!"
+          else
+            echo "Build failed: Image.gz-dtb not found"
+            exit 1
+          fi
+
+      - name: Upload kernel image
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-Image.gz-dtb
+          path: kernel/out/arch/arm64/boot/Image.gz-dtb
+          retention-days: 7
