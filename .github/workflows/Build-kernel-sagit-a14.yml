@@ -23,7 +23,7 @@ jobs:
         # vendor-branch: 14.0
         # vendor-dir: false
 
-        config: vendor/xiaomi/mi8998_defconfig
+        # config: vendor/xiaomi/mi8998_defconfig
         config-from-boot: true
         # merge-configs: false   ["arch/arm64/configs/my.config"]
 
