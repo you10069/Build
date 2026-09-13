@@ -1,0 +1,46 @@
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          repository: fructosecloud/android_kernel_xiaomi_msm8998
+          ref: lineage-23.2      # 替换为实际分支
+          path: kernel/source
+
+      - name: Build kernel
+        uses: dabao1955/kernel_build_action@v1.10.1
+        with:
+          kernel-url: ./kernel/source/
+          config: local_defconfig
+          arch: arm64
+          # android-version: 16
+          aosp-clang: false
+          # aosp-clang-version: r547379
+          aosp-gcc: false               # 放弃的下载途径
+          # Google Clang 19.x
+          other-clang-url: https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android16-release/clang-r547379.tar.gz
+          # Bootlin GCC 11.x (aarch64)
+          other-gcc64-url: https://toolchains.bootlin.com/downloads/releases/toolchains/aarch64/tarballs/aarch64--glibc--stable-2022.08-1.tar.bz2
+          # Bootlin GCC 11.x (arm)
+          other-gcc32-url: https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/armv7-eabihf--glibc--stable-2022.08-1.tar.bz2
+          ccache: true                  # 开启缓存
+          # disable-lto: true             # 禁用 LTO，避免老内核链接失败
+          extra-make-args: '["CLANG_TRIPLE=aarch64-linux-gnu-","CROSS_COMPILE=aarch64-linux-","CROSS_COMPILE_ARM32=arm-linux-gnueabihf-"]' # 必要参数
+          anykernel3: true
+
+#      - name: Upload kernel image
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: kernel-Image.gz-dtb
+#          path: kernel/source/arch/arm64/boot/Image.gz-dtb
+#          retention-days: 7
