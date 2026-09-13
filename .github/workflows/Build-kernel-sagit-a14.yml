@@ -8,14 +8,14 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04   # ubuntu-latest  ubuntu-22.04
+    runs-on: ubuntu-latest   # ubuntu-latest  ubuntu-22.04
 
     steps:
     - name: Build
       uses: dabao1955/kernel_build_action@main
       with:
         kernel-url: https://github.com/crdroidandroid/android_kernel_xiaomi_msm8998
-        kernel-branch: 14.0
+        kernel-branch: "14.0"
         # kernel-dir: false
 
         # vendor: false
