@@ -38,7 +38,7 @@ jobs:
       # build_libbox 会把 .aar 拷到 ../sing-box-for-android/app/libs，
       # 所以 sing-box 和 sing-box-for-android 必须是同级目录
       - name: Checkout sing-box core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ inputs.sing_box_repo }}
           ref: ${{ inputs.sing_box_ref }}
@@ -46,7 +46,7 @@ jobs:
           fetch-depth: 0        # 完整 clone，保证 git describe 能读到 tag，正确写入版本号
 
       - name: Checkout sing-box-for-android (SFA)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: ${{ inputs.sfa_repo }}
           ref: ${{ inputs.sfa_ref }}
@@ -54,7 +54,7 @@ jobs:
 
       # ---- 第 2 步：安装工具链 ----
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: sing-box/go.sum    # 缓存 Go module
@@ -134,7 +134,7 @@ jobs:
 
       # ---- 第 8 步：上传 APK ----
       - name: Upload APKs as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: SFA-foss-APKs
           path: sing-box-for-android/app/build/outputs/apk/other/release/*.apk
