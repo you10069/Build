@@ -20,8 +20,8 @@ on:
 
 
 env:
-  SING_BOX_REF: "v1.11.15"                              # 与 version.properties 的 VERSION 对齐
-  SFA_REF: "7f1fa971e3c7bbc504c2bd455f4e813a562990cb"    # sing-box-for-android 提交
+  # SING_BOX_REF: "v1.11.15"                              # 与 version.properties 的 VERSION 对齐
+  # SFA_REF: "7f1fa971e3c7bbc504c2bd455f4e813a562990cb"    # sing-box-for-android 提交
   GO_VERSION: "1.24"                                   # 来自 version.properties 的 GO_VERSION
 
 jobs:
