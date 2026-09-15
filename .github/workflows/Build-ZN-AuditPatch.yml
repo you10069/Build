@@ -42,19 +42,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew clean zipRelease
+          mkdir release
+          unzip module/release/ZN---Audit-Patch-*-release.zip -d release
 
-      - name: 调试：查找产物路径
-        run: |
-          echo "=== 所有 zip 产物 ==="
-          find . -name "*release*.zip" -type f
-          echo "=== 一级目录列表 ==="
-          ls -d */
+      # - name: 调试：查找产物路径
+      #   run: |
+      #     echo "=== 所有 zip 产物 ==="
+      #     find . -name "*release*.zip" -type f
+      #     echo "=== 一级目录列表 ==="
+      #     ls -d */
 
-      # - name: Upload release
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: Audit-Patch-release
-      #     path: "./release/*"
+      - name: Upload release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZN-Audit-Patch-release
+          path: "./release/*"
 
 
       # - name: Prepare artifact
