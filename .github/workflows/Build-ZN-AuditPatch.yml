@@ -27,6 +27,7 @@ jobs:
 
       - name: Build debug
         run: |
+          chmod +x gradlew
           ./gradlew clean zipDebug
           mkdir debug
           unzip module/release/Audit-Patch-*-debug.zip -d debug
@@ -39,6 +40,7 @@ jobs:
 
       - name: Build release
         run: |
+          chmod +x gradlew
           ./gradlew clean zipRelease
           mkdir release
           unzip module/release/Audit-Patch-*-release.zip -d release
