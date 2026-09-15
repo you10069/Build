@@ -1,0 +1,143 @@
+name: Build SFA FOSS APK
+
+on:
+  workflow_dispatch:            # 允许在 Actions 页面手动点按钮触发
+    inputs:
+      sing_box_ref:             # 手动时可临时指定 sing-box 的 tag/分支/commit
+        description: sing-box 版本
+        default: v1.11.15
+      sfa_ref:                  # 手动时可临时指定 sing-box-for-android 的版本
+        description: sing-box-for-android 版本
+        default: 7f1fa971e3c7bbc504c2bd455f4e813a562990cb
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+
+env:
+  SING_BOX_REF: "v1.11.15"                              # 与 version.properties 的 VERSION 对齐
+  SFA_REF: "7f1fa971e3c7bbc504c2bd455f4e813a562990cb"    # sing-box-for-android 提交
+  GO_VERSION: "1.24.4"                                   # 来自 version.properties 的 GO_VERSION
+  NDK_VERSION: "28.0.13004108"                           # 与 app/build.gradle 的 ndkVersion 一致
+
+jobs:
+  build-foss:
+    name: Build SFA FOSS
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # 打 tag 时用于创建 GitHub Release
+
+    steps:
+      # ---- 第 1 步：拉取两份源码，放到同级目录 ----
+      - name: Checkout sing-box core
+        uses: actions/checkout@v4
+        with:
+          repository: SagerNet/sing-box
+          ref: ${{ inputs.sing_box_ref || env.SING_BOX_REF }}
+          path: sing-box
+          fetch-depth: 0        # 完整 clone，保证 git describe 能读到 tag，正确写入版本号
+
+      - name: Checkout sing-box-for-android (SFA)
+        uses: actions/checkout@v4
+        with:
+          repository: SagerNet/sing-box-for-android
+          ref: ${{ inputs.sfa_ref || env.SFA_REF }}
+          path: sing-box-for-android
+
+      # ---- 第 2 步：安装工具链 ----
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: sing-box/go.sum    # 缓存 Go module
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"          # build_libbox 强制要求 openjdk 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3    # 设置 ANDROID_HOME 并接受许可
+
+      # ---- 第 3 步：装 NDK 和 SDK 组件（含 gomobile 需要的 android-21 平台）----
+      - name: Install Android SDK components + NDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install \
+            "ndk;${{ env.NDK_VERSION }}" \
+            "platforms;android-21" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "platform-tools"
+          # 校验 build_shared.FindSDK / findNDK 的两个前提条件
+          test -f "$ANDROID_HOME/licenses/android-sdk-license"
+          test -f "$ANDROID_HOME/ndk/${{ env.NDK_VERSION }}/source.properties"
+
+      # ---- 第 4 步：gomobile 交叉编译工具（对应 make lib_install）----
+      - name: Install gomobile / gobind
+        working-directory: sing-box
+        shell: bash
+        run: |
+          go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.4
+          go install github.com/sagernet/gomobile/cmd/gobind@v0.1.4
+
+      # ---- 第 5 步：把 Go 核心编成 libbox.aar（对应 make lib_android）----
+      # app/libs 被 .gitignore 忽略，不预先建目录的话 build_libbox 会静默跳过拷贝
+      - name: Build libbox.aar
+        working-directory: sing-box
+        shell: bash
+        run: |
+          mkdir -p ../sing-box-for-android/app/libs
+          go run ./cmd/internal/build_libbox -target android
+          ls -lh libbox.aar
+          ls -lh ../sing-box-for-android/app/libs/libbox.aar
+
+      # ---- 第 6 步：签名准备 ----
+      # 可选：用自己的 keystore 覆盖仓库里那份。base64 由命令生成后存成 secret
+      - name: Prepare signing keystore
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > sing-box-for-android/app/release.keystore
+          fi
+
+      # app/build.gradle 的 getProps() 从这个文件读签名口令
+      - name: Write local.properties
+        working-directory: sing-box-for-android
+        shell: bash
+        env:
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          ALIAS_NAME: ${{ secrets.ALIAS_NAME }}
+          ALIAS_PASS: ${{ secrets.ALIAS_PASS }}
+        run: |
+          printf 'KEYSTORE_PASS=%s\nALIAS_NAME=%s\nALIAS_PASS=%s\n' \
+            "$KEYSTORE_PASS" "$ALIAS_NAME" "$ALIAS_PASS" > local.properties
+
+      # ---- 第 7 步：Gradle 打 FOSS 版 APK（对应 assembleOtherRelease）----
+      - name: Enable Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Assemble FOSS release APK
+        working-directory: sing-box-for-android
+        shell: bash
+        run: |
+          ./gradlew :app:assembleOtherRelease --no-daemon
+          ls -lh app/build/outputs/apk/other/release/
+
+      # ---- 第 8 步：上传 APK ----
+      - name: Upload APKs as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SFA-foss-APKs
+          path: sing-box-for-android/app/build/outputs/apk/other/release/*.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release (仅打 tag 时)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sing-box-for-android/app/build/outputs/apk/other/release/*.apk
+          draft: true
