@@ -42,14 +42,30 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew clean zipRelease
-          mkdir release
-          unzip module/release/Audit-Patch-*-release.zip -d release
+          # mkdir release
+          # unzip module/release/Audit-Patch-*-release.zip -d release
+
+
+      - name: Prepare artifact
+        if: success()
+        id: prepareArtifact
+        run: |
+          AuditPatchReleaseName=`ls module/release/Audit-Patch-*-release.zip | awk -F '(/|.zip)' '{print $3}'` && echo "AuditPatchReleaseName=$AuditPatchReleaseName" >> $GITHUB_OUTPUT
+          unzip module/release/Audit-Patch-*-release.zip -d Audit-Patch-release
+
 
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
           name: Audit-Patch-release
           path: "./release/*"
+
+
+
+
+
+
+
 
 
 
