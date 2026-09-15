@@ -45,6 +45,12 @@ jobs:
           # mkdir release
           # unzip module/release/Audit-Patch-*-release.zip -d release
 
+      # - name: Upload release
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: Audit-Patch-release
+      #     path: "./release/*"
+
 
       - name: Prepare artifact
         if: success()
@@ -57,8 +63,10 @@ jobs:
       - name: Upload release
         uses: actions/upload-artifact@v4
         with:
-          name: Audit-Patch-release
-          path: "./release/*"
+          name: ${{ steps.prepareArtifact.outputs.AuditPatchReleaseName }}
+          path: "./Audit-Patch-release/*"
+
+
 
 
 
