@@ -5,10 +5,12 @@ on:
     inputs:
       sing_box_repo:            # 手动可临时换 sing-box 仓库
         description: sing-box 仓库 (owner/name)
-        default: SagerNet/sing-box
+        # default: SagerNet/sing-box
+        default: you10069/SingboxFork
       sing_box_ref:
         description: sing-box 版本
-        default: v1.11.15
+        # default: v1.11.15
+        default: v1.11.15-utls-providers-rev
       sfa_repo:                 # 手动可临时换 sing-box-for-android 仓库
         description: sing-box-for-android 仓库 (owner/name)
         default: SagerNet/sing-box-for-android
