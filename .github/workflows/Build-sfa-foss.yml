@@ -46,8 +46,8 @@ jobs:
       - name: Checkout sing-box-for-android (SFA)
         uses: actions/checkout@v4
         with:
-          repository: SagerNet/sing-box-for-android
-          ref: ${{ inputs.sfa_ref || env.SFA_REF }}
+          repository: ${{ inputs.sfa_repo }}
+          ref: ${{ inputs.sfa_ref }}
           path: sing-box-for-android
 
       # ---- 第 2 步：安装工具链 ----
