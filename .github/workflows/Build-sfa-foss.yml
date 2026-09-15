@@ -1,12 +1,18 @@
 name: Build SFA FOSS APK
 
 on:
-  workflow_dispatch:            # 允许在 Actions 页面手动点按钮触发
+  workflow_dispatch:
     inputs:
-      sing_box_ref:             # 手动时可临时指定 sing-box 的 tag/分支/commit
+      sing_box_repo:            # 手动可临时换 sing-box 仓库
+        description: sing-box 仓库 (owner/name)
+        default: SagerNet/sing-box
+      sing_box_ref:
         description: sing-box 版本
         default: v1.11.15
-      sfa_ref:                  # 手动时可临时指定 sing-box-for-android 的版本
+      sfa_repo:                 # 手动可临时换 sing-box-for-android 仓库
+        description: sing-box-for-android 仓库 (owner/name)
+        default: SagerNet/sing-box-for-android
+      sfa_ref:
         description: sing-box-for-android 版本
         default: 7f1fa971e3c7bbc504c2bd455f4e813a562990cb
   push:
