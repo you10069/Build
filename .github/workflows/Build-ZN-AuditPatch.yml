@@ -1,6 +1,7 @@
 name: Build ZN AuditPatch chisewaguri
 
 on:
+  workflow_dispatch:
 
 jobs:
   build:
