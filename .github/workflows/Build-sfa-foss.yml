@@ -17,8 +17,7 @@ on:
       sfa_ref:
         description: sing-box-for-android 版本
         default: 7f1fa971e3c7bbc504c2bd455f4e813a562990cb
-  push:
-    tags: ["v*"]
+
 
 env:
   SING_BOX_REF: "v1.11.15"                              # 与 version.properties 的 VERSION 对齐
