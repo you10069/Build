@@ -38,8 +38,8 @@ jobs:
       - name: Checkout sing-box core
         uses: actions/checkout@v4
         with:
-          repository: SagerNet/sing-box
-          ref: ${{ inputs.sing_box_ref || env.SING_BOX_REF }}
+          repository: ${{ inputs.sing_box_repo }}
+          ref: ${{ inputs.sing_box_ref }}
           path: sing-box
           fetch-depth: 0        # 完整 clone，保证 git describe 能读到 tag，正确写入版本号
 
