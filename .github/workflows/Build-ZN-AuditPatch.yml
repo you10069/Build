@@ -42,8 +42,6 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew clean zipRelease
-          # mkdir release
-          # unzip module/release/Audit-Patch-*-release.zip -d release
 
       - name: 调试：查找产物路径
         run: |
