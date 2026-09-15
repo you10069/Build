@@ -104,19 +104,19 @@ jobs:
         working-directory: sing-box-for-android
         shell: bash
         run: |
-          KS_PASS="ks$(openssl rand -hex 12)"
-          ALIAS_PASS="ap$(openssl rand -hex 12)"
+          KS_PASS="$(openssl rand -hex 16)"          # 一个随机口令，store 和 key 共用
           ALIAS_NAME="sfa$(date +%s)"
           rm -f app/release.keystore
           keytool -genkeypair -v \
             -keystore app/release.keystore \
             -storepass "$KS_PASS" \
-            -keypass "$ALIAS_PASS" \
+            -keypass "$KS_PASS" \
             -alias "$ALIAS_NAME" \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=SFA,O=SFA,L=NA,ST=NA,C=US" >/dev/null 2>&1
+          # KEYSTORE_PASS 和 ALIAS_PASS 必须相同（PKCS12 键都用 store 口令加密）
           printf 'KEYSTORE_PASS=%s\nALIAS_NAME=%s\nALIAS_PASS=%s\n' \
-            "$KS_PASS" "$ALIAS_NAME" "$ALIAS_PASS" > local.properties
+            "$KS_PASS" "$ALIAS_NAME" "$KS_PASS" > local.properties
           echo "Generated fresh keystore, alias=$ALIAS_NAME"
 
       # ---- 第 7 步：Gradle 打 FOSS 版 APK（对应 assembleOtherRelease）----
